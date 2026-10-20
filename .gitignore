@@ -10,3 +10,4 @@ secrets/
 logs/
 profile.yaml
 config/catalog_verification.yaml
+_site/

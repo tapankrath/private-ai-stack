@@ -69,3 +69,17 @@ def test_js_matches_python():
         p = load_profile(path)
         py = json.loads(json.dumps(recommend(p, cfg), default=str))
         assert _summary(js[p.id]) == _summary(py), p.id
+
+
+def test_pages_build_adds_document_shell(tmp_path):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("build_site", ROOT / "scripts" / "build-site.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    mod.build_pages(tmp_path / "out")
+    page = (tmp_path / "out" / "index.html").read_text()
+    assert page.startswith("<!doctype html>") and page.count("<!doctype") == 1
+    assert 'name="viewport"' in page and "</head>" in page and page.rstrip().endswith("</html>")
+    assert page.index("<title>") < page.index("</head>") < page.index('<div class="wrap">')
+    assert {"advisor-data.js", "advisor-engine.js", "guide.html"} <= {p.name for p in (tmp_path / "out").iterdir()}
+    assert not (tmp_path / "out" / "guide.template.html").exists()

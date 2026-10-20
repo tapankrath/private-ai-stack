@@ -69,6 +69,33 @@ def build_guide() -> str | None:
     return GUIDE_TEMPLATE.read_text().replace("<!--TOC-->", "".join(toc)).replace("<!--BODY-->", body)
 
 
+PAGE_HEAD = """<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}img{max-width:100%}[hidden]{display:none!important}</style>
+"""
+
+
+def wrap_page(fragment: str) -> str:
+    """site/index.html is a page fragment (the Claude artifact host adds the document shell).
+    For GitHub Pages, add the shell here: doctype, charset, viewport."""
+    i = fragment.index("</style>") + len("</style>")
+    return PAGE_HEAD + fragment[:i] + "\n</head>\n<body>\n" + fragment[i:] + "\n</body>\n</html>\n"
+
+
+def build_pages(out_dir: Path) -> None:
+    import shutil
+    if out_dir.exists():
+        shutil.rmtree(out_dir)
+    out_dir.mkdir(parents=True)
+    for f in (ROOT / "site").iterdir():
+        if f.is_file() and f.name != "guide.template.html":
+            shutil.copy2(f, out_dir / f.name)
+    (out_dir / "index.html").write_text(wrap_page((ROOT / "site" / "index.html").read_text()))
+
+
 if __name__ == "__main__":
     out = ROOT / "site" / "advisor-data.js"
     out.write_text(build())
@@ -79,3 +106,7 @@ if __name__ == "__main__":
     else:
         (ROOT / "site" / "guide.html").write_text(guide)
         print("wrote site/guide.html", file=sys.stderr)
+    if "--pages-out" in sys.argv:
+        dest = Path(sys.argv[sys.argv.index("--pages-out") + 1]).resolve()
+        build_pages(dest)
+        print(f"wrote the GitHub Pages site to {dest}", file=sys.stderr)
