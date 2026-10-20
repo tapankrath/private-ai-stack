@@ -36,7 +36,8 @@ def _summary(r):
         "included": [c["id"] for c in r["components"]["included"]],
         "excluded": [c["id"] for c in r["components"]["excluded"]],
         "enabled": sorted(r["capabilities"]["enabled"]), "tokens": r["tokens"], "disk": r["disk_estimate_gb"],
-        "tco": {k: v["total_usd"] for k, v in r["tco"]["options"].items()}, "cheapest": r["tco"]["cheapest"],
+        "tco": {k: (v["total_usd"], v["low_usd"], v.get("data_goes_to")) for k, v in r["tco"]["options"].items()},
+        "cheapest": r["tco"]["cheapest"], "verdict": r["tco"]["verdict"],
         "custom": {k: v["status"] for k, v in r["customization"].items()},
         "warnings": sorted(r["warnings"]),
     }

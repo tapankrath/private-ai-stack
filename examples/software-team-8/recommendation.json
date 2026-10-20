@@ -541,57 +541,76 @@
       "local": {
         "label": "Local (this recommendation)",
         "total_usd": 11582,
+        "low_usd": 11582,
         "breakdown": {
           "hardware": 0,
           "power": 482,
           "admin_time": 10800,
           "networking": 300
         },
-        "hardware_note": "$0 new hardware (existing machine fits)"
+        "hardware_note": "$0 new hardware (existing machine fits)",
+        "data_goes_to": null
       },
       "api_open": {
-        "label": "Hosted open-weight model API (e.g. Qwen3.6 35B-A3B via a router)",
-        "total_usd": 1322
+        "label": "Hosted open-weight model API (Qwen3.6 35B-A3B through a router)",
+        "total_usd": 2469,
+        "low_usd": 1395,
+        "fee_note": "includes the router's 5.5% fee",
+        "data_goes_to": "the router and whichever provider it routes to"
       },
       "api_frontier": {
-        "label": "Frontier model API (mid-tier frontier model)",
-        "total_usd": 50855
+        "label": "Frontier model API (mid-tier, e.g. Claude Sonnet 5.5)",
+        "total_usd": 37325,
+        "low_usd": 33903,
+        "fee_note": null,
+        "data_goes_to": "the model provider"
       },
       "subscription": {
         "label": "Flat-rate AI subscription (team plan, per user)",
-        "total_usd": 29837,
-        "note": "includes ~$1,037 of API usage for agents (subscriptions rarely cover them)"
+        "total_usd": 30577,
+        "low_usd": 30577,
+        "note": "includes ~$1,777 of API usage for agents (subscriptions rarely cover them)",
+        "data_goes_to": "the subscription provider"
       }
     },
     "local": {
       "label": "Local (this recommendation)",
       "total_usd": 11582,
+      "low_usd": 11582,
       "breakdown": {
         "hardware": 0,
         "power": 482,
         "admin_time": 10800,
         "networking": 300
       },
-      "hardware_note": "$0 new hardware (existing machine fits)"
+      "hardware_note": "$0 new hardware (existing machine fits)",
+      "data_goes_to": null
     },
     "cheapest": "api_open",
     "local_is_cheapest": false,
-    "verdict": "On these estimates, a hosted open-weight model API would be cheaper than local by about $10,260 over three years. Local is recommended here for privacy, availability, customization, not price. Note that the hosted options would send prompts and documents off-site, which this profile's regulated data makes a compliance question.",
+    "verdict": "On these estimates, a hosted open-weight model API would be cheaper than local by about $9,113 over three years. Local is recommended here for privacy, availability, customization, not price. The saving has a privacy cost: every question, the chat history sent with it and the document passages Recall finds would go to the router and whichever provider it routes to. For this profile that is not just a preference: its regulated data makes it a compliance question.",
     "token_volume": {
       "queries": 380160.0,
-      "human_in": 3041280000.0,
+      "human_in": 4752000000.0,
+      "human_in_low": 3041280000.0,
       "human_out": 190080000.0,
       "agent_in": 8640000000,
-      "agent_out": 864000000
+      "agent_out": 864000000,
+      "per_query": {
+        "base": 8000,
+        "history": 1500,
+        "recall": 3000,
+        "typical": 12500,
+        "low": 8000
+      }
     },
     "stale_or_unverified_prices": [
       "running costs",
-      "frontier API price",
       "subscription price"
     ],
     "assumptions": [
       "8 user(s) x 60 queries/day x 22 days/month",
-      "8,000 input + 500 output tokens per query",
+      "hosted APIs bill ~12,500 input tokens per question (8,000 question and instructions + 1,500 chat history resent + 3,000 Recall passages) and 500 output; the low figure counts the question only, at the cheapest provider",
       "4 agent(s) always on",
       "admin time at $75/hour; electricity $0.17/kWh",
       "High-memory machines may hold resale value while memory prices are high; resale is not counted."

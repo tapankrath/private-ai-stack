@@ -93,16 +93,19 @@ Cost is a concern you raised, so start with **Cost Comparison (Honest View)** be
 
 ## Cost Comparison (Honest View)
 
-| Local | API (open-weight model) | API (frontier model) | Subscription |
-|---|---|---|---|
-| $50,576 | $1,372 | $54,108 | $45,778 |
+| | Local | API (open-weight model) | API (frontier model) | Subscription |
+|---|---|---|---|---|
+| 3-year cost | $50,576 | $2,774 | $43,200 | $46,333 |
+| Low estimate | $50,576 | $1,447 | $36,072 | $46,333 |
+| Where your prompts go | stay on your machine | sent to the router and whichever provider it routes to | sent to the model provider | sent to the subscription provider |
 
-3-year estimates. On these estimates, a hosted open-weight model API would be cheaper than local by about $49,204 over three years. Local is recommended here for security, availability, privacy, not price. Note that the hosted options would send prompts and documents off-site, which this profile's regulated data makes a compliance question.
+3-year estimates. On these estimates, a hosted open-weight model API would be cheaper than local by about $47,802 over three years. Local is recommended here for security, availability, privacy, not price. The saving has a privacy cost: every question, the chat history sent with it and the document passages Recall finds would go to the router and whichever provider it routes to. For this profile that is not just a preference: its regulated data makes it a compliance question.
 
 Local breakdown: hardware $3,100, power $1,776, admin time $43,200, networking $2,500.
-Subscription includes ~$778 of API usage for agents (subscriptions rarely cover them).
-Assumptions: 50 user(s) x 20 queries/day x 22 days/month; 8,000 input + 500 output tokens per query; 3 agent(s) always on; admin time at $75/hour; electricity $0.17/kWh; High-memory machines may hold resale value while memory prices are high; resale is not counted.
-Prices not verified in the last 60 days: running costs, frontier API price, subscription price, price of Workstation with two RTX 3090 24 GB (48 GB total, used GPUs). Update config/pricing.yaml.
+The open-weight API figure includes the router's 5.5% fee.
+Subscription includes ~$1,333 of API usage for agents (subscriptions rarely cover them).
+Assumptions: 50 user(s) x 20 queries/day x 22 days/month; hosted APIs bill ~12,500 input tokens per question (8,000 question and instructions + 1,500 chat history resent + 3,000 Recall passages) and 500 output; the low figure counts the question only, at the cheapest provider; 3 agent(s) always on; admin time at $75/hour; electricity $0.17/kWh; High-memory machines may hold resale value while memory prices are high; resale is not counted.
+Prices not verified in the last 60 days: running costs, subscription price, price of Workstation with two RTX 3090 24 GB (48 GB total, used GPUs). Update config/pricing.yaml.
 
 ## Setup Steps
 

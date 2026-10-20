@@ -49,8 +49,10 @@ These are the advisor's actual results (all estimates). See `examples/` for the 
 | `software-team-8` (RTX 3090-class 24 GB) | Qwen3 14B + Qwen2.5-Coder 7B, both loaded; code-aware search; SSO; agent watchdog | vision, speech, OCR |
 
 The honest cost view: for every starter profile, a hosted open-weight API would cost less over
-three years. The advisor says so, then gives the profile's reasons for running locally anyway
-(privacy, security, availability, customization).
+three years, even after counting the router's fee, the chat history resent with every question
+and the document passages Recall adds. The advisor says so, shows a low-to-typical range, names
+who would receive your prompts with each hosted option, and then gives the profile's reasons for
+running locally anyway (privacy, security, availability, customization).
 
 Model names, prices and engine status are **dated examples (October 2026)**. Run
 `scripts/update-catalog --allow-egress` and refresh `config/pricing.yaml` before relying on them.

@@ -82,15 +82,18 @@ One mid-size general AI model on one server on your network handles your questio
 
 ## Cost Comparison (Honest View)
 
-| Local | API (open-weight model) | API (frontier model) | Subscription |
-|---|---|---|---|
-| $13,638 | $148 | $6,237 | $9,000 |
+| | Local | API (open-weight model) | API (frontier model) | Subscription |
+|---|---|---|---|---|
+| 3-year cost | $13,638 | $360 | $5,940 | $9,000 |
+| Low estimate | $13,638 | $157 | $4,158 | $9,000 |
+| Where your prompts go | stay on your machine | sent to the router and whichever provider it routes to | sent to the model provider | sent to the subscription provider |
 
-3-year estimates. On these estimates, a hosted open-weight model API would be cheaper than local by about $13,490 over three years. Local is recommended here for privacy, security, availability, not price. Note that the hosted options would send prompts and documents off-site, which this profile's air-gap requirement rules out.
+3-year estimates. On these estimates, a hosted open-weight model API would be cheaper than local by about $13,278 over three years. Local is recommended here for privacy, security, availability, not price. The saving has a privacy cost: every question, the chat history sent with it and the document passages Recall finds would go to the router and whichever provider it routes to. For this profile that is not just a preference: its air-gap requirement rules hosted options out.
 
 Local breakdown: hardware $1,600, power $938, admin time $10,800, networking $300.
-Assumptions: 10 user(s) x 25 queries/day x 22 days/month; 8,000 input + 500 output tokens per query; 0 agent(s); admin time at $75/hour; electricity $0.17/kWh; High-memory machines may hold resale value while memory prices are high; resale is not counted.
-Prices not verified in the last 60 days: running costs, frontier API price, subscription price, price of Desktop with one RTX 3090 24 GB (used GPU). Update config/pricing.yaml.
+The open-weight API figure includes the router's 5.5% fee.
+Assumptions: 10 user(s) x 25 queries/day x 22 days/month; hosted APIs bill ~12,500 input tokens per question (8,000 question and instructions + 1,500 chat history resent + 3,000 Recall passages) and 500 output; the low figure counts the question only, at the cheapest provider; 0 agent(s); admin time at $75/hour; electricity $0.17/kWh; High-memory machines may hold resale value while memory prices are high; resale is not counted.
+Prices not verified in the last 60 days: running costs, subscription price, price of Desktop with one RTX 3090 24 GB (used GPU). Update config/pricing.yaml.
 
 ## Options If You Want More
 

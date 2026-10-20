@@ -179,21 +179,32 @@ running:
 
 # ------------------------------------------------------------------ hosted alternatives
 usage_assumptions:
-  input_tokens_per_query: {standard: 2000, long: 8000, very_long: 30000}   # incl. retrieved context
+  # What a hosted API bills for each question. Every request resends the whole prompt, so:
+  input_tokens_per_query: {standard: 2000, long: 8000, very_long: 30000}   # the question, instructions, attached text
+  history_tokens_per_query: 1500     # earlier turns of the chat, sent again with each question (average over a chat)
+  recall_tokens_per_query: 3000      # passages found in your documents/history (when a recall job is selected)
   output_tokens_per_query: 500
   working_days_per_month: 22
   agent_tokens_per_day: {input: 2000000, output: 200000}   # per always-on agent (estimate)
 
 api:
   open_model:
-    label: "Hosted open-weight model API (e.g. Qwen3.6 35B-A3B via a router)"
-    usd_per_million: {input: 0.05, output: 0.70}
-    last_verified: "2026-10-19"
-    source: "https://openrouter.ai/qwen/qwen3.6-35b-a3b"
+    label: "Hosted open-weight model API (Qwen3.6 35B-A3B through a router)"
+    usd_per_million: {input: 0.10, output: 0.95}       # typical provider on the router
+    low_usd_per_million: {input: 0.05, output: 0.70}   # cheapest listed provider
+    router_fee_fraction: 0.055                          # OpenRouter platform fee on card top-ups (min $0.80); crypto 5%
+    data_goes_to: "the router and whichever provider it routes to"
+    last_verified: "2026-10-20"
+    sources:
+      - "https://openrouter.ai/qwen/qwen3.6-35b-a3b"
+      - "https://openrouter.ai/blog/announcements/simplifying-our-platform-fee/"
   frontier:
-    label: "Frontier model API (mid-tier frontier model)"
-    usd_per_million: {input: 3.00, output: 15.00}
-    last_verified: null
+    label: "Frontier model API (mid-tier, e.g. Claude Sonnet 5.5)"
+    usd_per_million: {input: 2.00, output: 10.00}
+    router_fee_fraction: 0                              # billed directly by the provider
+    data_goes_to: "the model provider"
+    last_verified: "2026-10-20"
+    sources: ["https://anotherwrapper.com/llm-pricing/claude-sonnet-5-5 (third-party price tracker)"]
 
 subscription:
   label: "Flat-rate AI subscription (team plan, per user)"
@@ -202,4 +213,5 @@ subscription:
   heavy_user_queries_per_day: 60
   covers_agents: false               # always-on agents usually need API billing
   note: "Providers subsidize subscriptions; often the most capability per dollar for heavy users."
+  data_goes_to: "the subscription provider"
   last_verified: null

@@ -547,58 +547,77 @@
       "local": {
         "label": "Local (this recommendation)",
         "total_usd": 50576,
+        "low_usd": 50576,
         "breakdown": {
           "hardware": 3100,
           "power": 1776,
           "admin_time": 43200,
           "networking": 2500
         },
-        "hardware_note": "$2,600-$3,600 for Workstation with two RTX 3090 24 GB (48 GB total, used GPUs) (estimate)"
+        "hardware_note": "$2,600-$3,600 for Workstation with two RTX 3090 24 GB (48 GB total, used GPUs) (estimate)",
+        "data_goes_to": null
       },
       "api_open": {
-        "label": "Hosted open-weight model API (e.g. Qwen3.6 35B-A3B via a router)",
-        "total_usd": 1372
+        "label": "Hosted open-weight model API (Qwen3.6 35B-A3B through a router)",
+        "total_usd": 2774,
+        "low_usd": 1447,
+        "fee_note": "includes the router's 5.5% fee",
+        "data_goes_to": "the router and whichever provider it routes to"
       },
       "api_frontier": {
-        "label": "Frontier model API (mid-tier frontier model)",
-        "total_usd": 54108
+        "label": "Frontier model API (mid-tier, e.g. Claude Sonnet 5.5)",
+        "total_usd": 43200,
+        "low_usd": 36072,
+        "fee_note": null,
+        "data_goes_to": "the model provider"
       },
       "subscription": {
         "label": "Flat-rate AI subscription (team plan, per user)",
-        "total_usd": 45778,
-        "note": "includes ~$778 of API usage for agents (subscriptions rarely cover them)"
+        "total_usd": 46333,
+        "low_usd": 46333,
+        "note": "includes ~$1,333 of API usage for agents (subscriptions rarely cover them)",
+        "data_goes_to": "the subscription provider"
       }
     },
     "local": {
       "label": "Local (this recommendation)",
       "total_usd": 50576,
+      "low_usd": 50576,
       "breakdown": {
         "hardware": 3100,
         "power": 1776,
         "admin_time": 43200,
         "networking": 2500
       },
-      "hardware_note": "$2,600-$3,600 for Workstation with two RTX 3090 24 GB (48 GB total, used GPUs) (estimate)"
+      "hardware_note": "$2,600-$3,600 for Workstation with two RTX 3090 24 GB (48 GB total, used GPUs) (estimate)",
+      "data_goes_to": null
     },
     "cheapest": "api_open",
     "local_is_cheapest": false,
-    "verdict": "On these estimates, a hosted open-weight model API would be cheaper than local by about $49,204 over three years. Local is recommended here for security, availability, privacy, not price. Note that the hosted options would send prompts and documents off-site, which this profile's regulated data makes a compliance question.",
+    "verdict": "On these estimates, a hosted open-weight model API would be cheaper than local by about $47,802 over three years. Local is recommended here for security, availability, privacy, not price. The saving has a privacy cost: every question, the chat history sent with it and the document passages Recall finds would go to the router and whichever provider it routes to. For this profile that is not just a preference: its regulated data makes it a compliance question.",
     "token_volume": {
       "queries": 792000.0,
-      "human_in": 6336000000.0,
+      "human_in": 9900000000.0,
+      "human_in_low": 6336000000.0,
       "human_out": 396000000.0,
       "agent_in": 6480000000,
-      "agent_out": 648000000
+      "agent_out": 648000000,
+      "per_query": {
+        "base": 8000,
+        "history": 1500,
+        "recall": 3000,
+        "typical": 12500,
+        "low": 8000
+      }
     },
     "stale_or_unverified_prices": [
       "running costs",
-      "frontier API price",
       "subscription price",
       "price of Workstation with two RTX 3090 24 GB (48 GB total, used GPUs)"
     ],
     "assumptions": [
       "50 user(s) x 20 queries/day x 22 days/month",
-      "8,000 input + 500 output tokens per query",
+      "hosted APIs bill ~12,500 input tokens per question (8,000 question and instructions + 1,500 chat history resent + 3,000 Recall passages) and 500 output; the low figure counts the question only, at the cheapest provider",
       "3 agent(s) always on",
       "admin time at $75/hour; electricity $0.17/kWh",
       "High-memory machines may hold resale value while memory prices are high; resale is not counted."

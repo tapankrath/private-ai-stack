@@ -477,19 +477,28 @@
       const hours = run.active_hours_per_day, kwh = (load * hours + idle * (24 - hours)) / 1000 * 365 * 3 * share, power = kwh * run.electricity_usd_per_kwh;
       const rate = run.admin_rate_usd_per_hour[p.org_type], admin = run.admin_hours_per_month[tier] * rate * MONTHS, network = run.networking_one_time_usd[tier];
       const u = pr.usage_assumptions, queries = p.users * p.queries_per_user_per_day * u.working_days_per_month * MONTHS;
+      const recallJob = p.jobs.includes("knowledge_recall") || p.jobs.includes("conversation_recall");
+      const pq = { base: u.input_tokens_per_query[p.context_needs], history: u.history_tokens_per_query, recall: recallJob ? u.recall_tokens_per_query : 0 };
+      pq.typical = pq.base + pq.history + pq.recall; pq.low = pq.base;
       const days = p.agents_always_on ? 30 * MONTHS : u.working_days_per_month * MONTHS;
-      const v = { queries, human_in: queries * u.input_tokens_per_query[p.context_needs], human_out: queries * u.output_tokens_per_query, agent_in: p.agents_count * u.agent_tokens_per_day.input * days, agent_out: p.agents_count * u.agent_tokens_per_day.output * days };
-      const cost = (price, a, b) => a / 1e6 * price.input + b / 1e6 * price.output;
-      const tin = v.human_in + v.agent_in, tout = v.human_out + v.agent_out, sub = pr.subscription;
+      const v = { queries, human_in: queries * pq.typical, human_in_low: queries * pq.low, human_out: queries * u.output_tokens_per_query,
+        agent_in: p.agents_count * u.agent_tokens_per_day.input * days, agent_out: p.agents_count * u.agent_tokens_per_day.output * days, per_query: pq };
+      const cost = (price, a, b, fee) => (a / 1e6 * price.input + b / 1e6 * price.output) * (1 + (fee || 0));
+      const tout = v.human_out + v.agent_out, tin = v.human_in + v.agent_in, tinLow = v.human_in_low + v.agent_in, sub = pr.subscription;
+      const om = pr.api.open_model, fr = pr.api.frontier, omFee = om.router_fee_fraction || 0, frFee = fr.router_fee_fraction || 0;
       const perUser = p.queries_per_user_per_day >= sub.heavy_user_queries_per_day ? sub.heavy_user_usd_per_month : sub.usd_per_user_per_month;
       let subTotal = p.users * perUser * MONTHS, subAgents = 0;
-      if (p.agents_count && !sub.covers_agents) subAgents = cost(pr.api.open_model.usd_per_million, v.agent_in, v.agent_out);
+      if (p.agents_count && !sub.covers_agents) subAgents = cost(om.usd_per_million, v.agent_in, v.agent_out, omFee);
       subTotal += subAgents;
+      const pct = (f) => (Math.round(f * 1000) / 10).toFixed(1) + "%";
+      const localTotal = pyRound(hwCost + power + admin + network);
       const options = {
-        local: { label: "Local (this recommendation)", total_usd: pyRound(hwCost + power + admin + network), breakdown: { hardware: pyRound(hwCost), power: pyRound(power), admin_time: pyRound(admin), networking: network }, hardware_note: note },
-        api_open: { label: pr.api.open_model.label, total_usd: pyRound(cost(pr.api.open_model.usd_per_million, tin, tout)) },
-        api_frontier: { label: pr.api.frontier.label, total_usd: pyRound(cost(pr.api.frontier.usd_per_million, tin, tout)) },
-        subscription: { label: sub.label, total_usd: pyRound(subTotal), note: subAgents ? `includes ~$${pyRound(subAgents).toLocaleString("en-US")} of API usage for agents (subscriptions rarely cover them)` : null },
+        local: { label: "Local (this recommendation)", total_usd: localTotal, low_usd: localTotal, breakdown: { hardware: pyRound(hwCost), power: pyRound(power), admin_time: pyRound(admin), networking: network }, hardware_note: note, data_goes_to: null },
+        api_open: { label: om.label, total_usd: pyRound(cost(om.usd_per_million, tin, tout, omFee)), low_usd: pyRound(cost(om.low_usd_per_million || om.usd_per_million, tinLow, tout, omFee)),
+          fee_note: omFee ? `includes the router's ${pct(omFee)} fee` : null, data_goes_to: om.data_goes_to || null },
+        api_frontier: { label: fr.label, total_usd: pyRound(cost(fr.usd_per_million, tin, tout, frFee)), low_usd: pyRound(cost(fr.usd_per_million, tinLow, tout, frFee)),
+          fee_note: frFee ? `includes a ${pct(frFee)} fee` : null, data_goes_to: fr.data_goes_to || null },
+        subscription: { label: sub.label, total_usd: pyRound(subTotal), low_usd: pyRound(subTotal), note: subAgents ? `includes ~$${pyRound(subAgents).toLocaleString("en-US")} of API usage for agents (subscriptions rarely cover them)` : null, data_goes_to: sub.data_goes_to || null },
       };
       const cheapest = Object.keys(options).reduce((b, k) => (b === null || options[k].total_usd < options[b].total_usd ? k : b), null);
       const reasons = rec.why_local.map((w) => w.benefit).filter((b) => b !== "cost");
@@ -499,7 +508,9 @@
         const diff = options.local.total_usd - options[cheapest].total_usd;
         const short = { api_open: "a hosted open-weight model API", api_frontier: "a frontier model API", subscription: "a flat-rate subscription" }[cheapest];
         verdict = `On these estimates, ${short} would be cheaper than local by about $${diff.toLocaleString("en-US")} over three years. Local is recommended here for ${reasons.slice(0, 3).join(", ") || "non-price reasons"}, not price.`;
-        if (p.air_gapped || p.regulated) verdict += " Note that the hosted options would send prompts and documents off-site, which this profile's " + (p.air_gapped ? "air-gap requirement rules out." : "regulated data makes a compliance question.");
+        const goes = options[cheapest].data_goes_to || "the provider";
+        verdict += " The saving has a privacy cost: every question, the chat history sent with it" + (v.per_query.recall ? " and the document passages Recall finds" : "") + ` would go to ${goes}.`;
+        if (p.air_gapped || p.regulated) verdict += " For this profile that is not just a preference: its " + (p.air_gapped ? "air-gap requirement rules hosted options out." : "regulated data makes it a compliance question.");
       }
       const today = new Date(), stale = [];
       const check = (name, e) => { const lv = e.last_verified; if (!lv) { stale.push(name); return; } const dd = (today - new Date(lv + "T00:00:00")) / 86400000; if (dd > pr.stale_after_days) stale.push(name); };

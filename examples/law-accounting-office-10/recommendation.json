@@ -493,58 +493,77 @@
       "local": {
         "label": "Local (this recommendation)",
         "total_usd": 13638,
+        "low_usd": 13638,
         "breakdown": {
           "hardware": 1600,
           "power": 938,
           "admin_time": 10800,
           "networking": 300
         },
-        "hardware_note": "$1,300-$1,900 for Desktop with one RTX 3090 24 GB (used GPU) (estimate)"
+        "hardware_note": "$1,300-$1,900 for Desktop with one RTX 3090 24 GB (used GPU) (estimate)",
+        "data_goes_to": null
       },
       "api_open": {
-        "label": "Hosted open-weight model API (e.g. Qwen3.6 35B-A3B via a router)",
-        "total_usd": 148
+        "label": "Hosted open-weight model API (Qwen3.6 35B-A3B through a router)",
+        "total_usd": 360,
+        "low_usd": 157,
+        "fee_note": "includes the router's 5.5% fee",
+        "data_goes_to": "the router and whichever provider it routes to"
       },
       "api_frontier": {
-        "label": "Frontier model API (mid-tier frontier model)",
-        "total_usd": 6237
+        "label": "Frontier model API (mid-tier, e.g. Claude Sonnet 5.5)",
+        "total_usd": 5940,
+        "low_usd": 4158,
+        "fee_note": null,
+        "data_goes_to": "the model provider"
       },
       "subscription": {
         "label": "Flat-rate AI subscription (team plan, per user)",
         "total_usd": 9000,
-        "note": null
+        "low_usd": 9000,
+        "note": null,
+        "data_goes_to": "the subscription provider"
       }
     },
     "local": {
       "label": "Local (this recommendation)",
       "total_usd": 13638,
+      "low_usd": 13638,
       "breakdown": {
         "hardware": 1600,
         "power": 938,
         "admin_time": 10800,
         "networking": 300
       },
-      "hardware_note": "$1,300-$1,900 for Desktop with one RTX 3090 24 GB (used GPU) (estimate)"
+      "hardware_note": "$1,300-$1,900 for Desktop with one RTX 3090 24 GB (used GPU) (estimate)",
+      "data_goes_to": null
     },
     "cheapest": "api_open",
     "local_is_cheapest": false,
-    "verdict": "On these estimates, a hosted open-weight model API would be cheaper than local by about $13,490 over three years. Local is recommended here for privacy, security, availability, not price. Note that the hosted options would send prompts and documents off-site, which this profile's air-gap requirement rules out.",
+    "verdict": "On these estimates, a hosted open-weight model API would be cheaper than local by about $13,278 over three years. Local is recommended here for privacy, security, availability, not price. The saving has a privacy cost: every question, the chat history sent with it and the document passages Recall finds would go to the router and whichever provider it routes to. For this profile that is not just a preference: its air-gap requirement rules hosted options out.",
     "token_volume": {
       "queries": 198000.0,
-      "human_in": 1584000000.0,
+      "human_in": 2475000000.0,
+      "human_in_low": 1584000000.0,
       "human_out": 99000000.0,
       "agent_in": 0,
-      "agent_out": 0
+      "agent_out": 0,
+      "per_query": {
+        "base": 8000,
+        "history": 1500,
+        "recall": 3000,
+        "typical": 12500,
+        "low": 8000
+      }
     },
     "stale_or_unverified_prices": [
       "running costs",
-      "frontier API price",
       "subscription price",
       "price of Desktop with one RTX 3090 24 GB (used GPU)"
     ],
     "assumptions": [
       "10 user(s) x 25 queries/day x 22 days/month",
-      "8,000 input + 500 output tokens per query",
+      "hosted APIs bill ~12,500 input tokens per question (8,000 question and instructions + 1,500 chat history resent + 3,000 Recall passages) and 500 output; the low figure counts the question only, at the cheapest provider",
       "0 agent(s)",
       "admin time at $75/hour; electricity $0.17/kWh",
       "High-memory machines may hold resale value while memory prices are high; resale is not counted."
