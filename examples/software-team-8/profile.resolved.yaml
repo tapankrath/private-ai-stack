@@ -1,0 +1,110 @@
+schema_version: 1
+profile_id: software-team-8
+description: Small software team needing private coding help and search over internal
+  docs and code.
+org:
+  type: small_business
+  name: Example Dev Studio
+  technical_skill: it_admin
+users:
+  count: 8
+  peak_concurrent: 5
+jobs:
+- general_qa
+- coding
+- knowledge_recall
+- conversation_recall
+- research
+data:
+  types:
+  - text
+  - code
+  - pdf
+  volume_gb: 30
+  document_count: 60000
+  growth_gb_per_month: 2
+  languages:
+  - en
+sensitivity:
+  level: high
+  regulated_data:
+  - client_confidential
+  air_gapped: false
+  data_residency: local_network
+usage:
+  queries_per_user_per_day: 60
+  latency: instant
+  offline_required: false
+  context_needs: long
+hardware:
+  autodetect: true
+  override:
+    platform: linux_x86
+    ram_gb: 64
+    gpu: nvidia
+    vram_gb: 24
+    free_disk_gb: 2000
+  budget_usd: lt_5000
+  deployment_preference: home_server
+features:
+  web_research: true
+  connectors: []
+  cloud_burst: false
+  sso: true
+retention:
+  conversations_days: 365
+  documents: keep_until_deleted
+  memory_cards: user_managed
+workload:
+  shape: generation_heavy
+  agents:
+    count: 4
+    always_on: true
+customization:
+  post_training:
+    requested: true
+    justification: Domain terminology/workflows not captured by RAG alone; confirm
+      with eval set first.
+  distillation:
+    requested: false
+    justification: ''
+  abliteration:
+    requested: false
+    justification: ''
+    admin_approved: false
+blockers:
+- cost
+priorities:
+- privacy
+- availability
+- customization
+- cost
+licensing:
+  use: commercial
+assumptions:
+- Source code indexed read-only from local git mirrors; no write access to repos.
+expected:
+  tier: 2
+  runtime: ollama_or_vllm
+  must_include:
+  - general_chat_mid
+  - code_model
+  - embeddings
+  - code_aware_chunking
+  - sso
+  - collection_acls
+  - searxng
+  must_include_extra:
+  - model_pinning
+  - agent_watchdog
+  - customize_track_post_training
+  must_exclude:
+  - vision
+  - speech_to_text
+  - ocr_pipeline
+  - cloud_burst
+  - abliteration
+  must_generate:
+  - tco_comparison
+  license_filter: commercial_allowed
+  max_memory_use_pct: 80

@@ -1,0 +1,339 @@
+# Private local AI stack - Tier 1-2 skeleton.
+#
+# The advisor (`make advise`) writes .env with COMPOSE_PROFILES so ONLY the services your
+# profile needs start. Nothing here starts without a matching profile.
+#
+# Network design (egress control):
+#   backend  - internal: true  -> containers on it have NO route to the internet
+#   models   - internal: true  -> ONLY the Gateway (and ingest worker) can reach the model runtime;
+#                                 Open WebUI cannot bypass the Gateway
+#   edge     - normal bridge   -> only Caddy joins it, and only Caddy publishes a port
+#   pull     - normal bridge   -> used only by the one-off `model-pull` job (make pull)
+#   research - normal bridge   -> only SearXNG, only when the research profile is on
+# Also set a host firewall to deny outbound by default (see docs/SECURITY_CHECKLIST.md);
+# Docker networks alone do not stop the host or a natively installed runtime.
+#
+# Never use Ollama ':cloud' model tags: they run prompts on a third party's servers.
+# Images: tags below are starting points. PIN A DIGEST AT INSTALL TIME
+# (docker pull <image> && docker inspect --format '{{index .RepoDigests 0}}' <image>)
+# and record it in .env. Verify every environment flag against the pinned version.
+
+name: private-ai
+
+x-hardening: &hardening
+  restart: unless-stopped
+  security_opt: ["no-new-privileges:true"]
+  logging: {driver: local, options: {max-size: "20m", max-file: "5"}}
+
+networks:
+  backend:
+    internal: true
+  models:
+    internal: true
+  edge: {}
+  pull: {}
+  research: {}
+
+volumes:
+  ollama-models: {}
+  webui-data: {}
+  postgres-data: {}
+  caddy-data: {}
+  hf-cache: {}
+  whisper-models: {}
+  gateway-data: {}
+  prometheus-data: {}
+  grafana-data: {}
+  loki-data: {}
+  # Volumes live on the host disk: full-disk encryption (FileVault/LUKS/BitLocker) is required.
+
+secrets:
+  postgres_password: {file: ./secrets/postgres_password}
+  webui_secret_key: {file: ./secrets/webui_secret_key}
+  gateway_key: {file: ./secrets/gateway_key}
+  gateway_db_password: {file: ./secrets/gateway_db_password}
+
+services:
+  # ------------------------------------------------------------ edge (only published port)
+  caddy:
+    <<: *hardening
+    profiles: [ui]
+    image: ${CADDY_IMAGE:-caddy:2}
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${HTTPS_PORT:-8443}:8443"
+    volumes:
+      - ./config/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+    networks: [edge, backend]
+
+  # ------------------------------------------------------------ chat UI
+  open-webui:
+    <<: *hardening
+    profiles: [ui]
+    image: ${OPEN_WEBUI_IMAGE:-ghcr.io/open-webui/open-webui:main}
+    env_file:
+      - path: .env.secrets        # tier 2+: DATABASE_URL for Postgres, created by `make secrets`
+        required: false
+    environment:
+      # Open WebUI talks ONLY to the Gateway (OpenAI-compatible); it has no route to the runtime.
+      ENABLE_OLLAMA_API: "false"
+      ENABLE_OPENAI_API: "true"
+      OPENAI_API_BASE_URL: http://gateway:8080/v1
+      # OPENAI_API_KEY (= the gateway key) comes from .env.secrets, written by `make secrets`
+      ENABLE_FORWARD_USER_INFO_HEADERS: "true"   # tells the Gateway which user is chatting
+      WEBUI_AUTH: ${WEBUI_AUTH:-true}
+      ENABLE_SIGNUP: "false"
+      WEBUI_SECRET_KEY_FILE: /run/secrets/webui_secret_key
+      # privacy: no telemetry, no community sharing, no outbound model hub calls
+      OFFLINE_MODE: "true"
+      ANONYMIZED_TELEMETRY: "false"
+      DO_NOT_TRACK: "true"
+      SCARF_NO_ANALYTICS: "true"
+      ENABLE_COMMUNITY_SHARING: "false"
+      ENABLE_WEB_SEARCH: "false"                 # web research goes through the Gateway (isolated, audited)
+      ENABLE_RAG_WEB_SEARCH: "false"
+    secrets: [webui_secret_key]
+    volumes:
+      - webui-data:/app/backend/data
+    networks: [backend]
+
+  # ------------------------------------------------------------ inference
+  ollama:
+    <<: *hardening
+    profiles: [ollama]
+    image: ${OLLAMA_IMAGE:-ollama/ollama:latest}
+    environment:
+      OLLAMA_NUM_PARALLEL: ${OLLAMA_NUM_PARALLEL:-1}
+      OLLAMA_MAX_LOADED_MODELS: ${OLLAMA_MAX_LOADED_MODELS:-2}
+      OLLAMA_FLASH_ATTENTION: ${OLLAMA_FLASH_ATTENTION:-1}
+      OLLAMA_KV_CACHE_TYPE: ${OLLAMA_KV_CACHE_TYPE:-f16}
+      OLLAMA_CONTEXT_LENGTH: ${OLLAMA_CONTEXT_LENGTH:-8192}
+      OLLAMA_KEEP_ALIVE: ${OLLAMA_KEEP_ALIVE:-30m}
+    volumes:
+      - ollama-models:/root/.ollama
+    networks: [models]
+    healthcheck:                  # the agent watchdog relies on this + restart policy
+      test: ["CMD", "ollama", "list"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    # NVIDIA GPU. Remove this block on a CPU-only host.
+    deploy:
+      resources:
+        reservations:
+          devices: [{driver: nvidia, count: all, capabilities: [gpu]}]
+
+  # One-off job with internet access to pull the models in models.txt (make pull).
+  # It shares the model volume, pulls, and exits. This is the ONLY step that downloads models.
+  model-pull:
+    profiles: [pull]
+    image: ${OLLAMA_IMAGE:-ollama/ollama:latest}
+    entrypoint: ["/bin/sh", "-c"]
+    # Pulls each listed model, then records name + digest in generated/model-pins.txt (model pinning).
+    command: ["ollama serve & sleep 3 && while read -r m _; do case \"$$m\" in ''|'#'*) ;; *) case \"$$m\" in *:cloud*) echo \"refusing cloud tag $$m\"; exit 1;; esac; ollama pull \"$$m\" || exit 1;; esac; done < /models.txt && ollama list > /pins/model-pins.txt"]
+    volumes:
+      - ollama-models:/root/.ollama
+      - ./generated/models-ollama.txt:/models.txt:ro
+      - ./generated:/pins
+    networks: [pull]
+
+  vllm:
+    <<: *hardening
+    profiles: [vllm]
+    image: ${VLLM_IMAGE:-vllm/vllm-openai:latest}
+    environment:
+      HF_HUB_OFFLINE: "1"          # weights must already be in hf-cache (make pull-vllm)
+      VLLM_NO_USAGE_STATS: "1"
+      DO_NOT_TRACK: "1"
+    command:
+      - --model=${VLLM_MODEL:-}
+      - --quantization=${VLLM_QUANTIZATION:-awq}
+      - --max-model-len=${VLLM_MAX_MODEL_LEN:-16384}
+      - --tensor-parallel-size=${VLLM_TENSOR_PARALLEL:-1}
+      - --kv-cache-dtype=${VLLM_KV_CACHE_DTYPE:-auto}
+      - --max-num-seqs=${VLLM_MAX_NUM_SEQS:-16}
+      - --gpu-memory-utilization=${VLLM_GPU_MEMORY_UTILIZATION:-0.85}
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/health',timeout=5)\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    volumes:
+      - hf-cache:/root/.cache/huggingface
+    ipc: host
+    networks: [models]
+    deploy:
+      resources:
+        reservations:
+          devices: [{driver: nvidia, count: all, capabilities: [gpu]}]
+
+  # ------------------------------------------------------------ data (tier 2+)
+  postgres:
+    <<: *hardening
+    profiles: [db]
+    image: ${POSTGRES_IMAGE:-pgvector/pgvector:pg16}
+    environment:
+      POSTGRES_USER: assistant
+      POSTGRES_DB: assistant
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets: [postgres_password, gateway_db_password]
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./config/postgres-init.sh:/docker-entrypoint-initdb.d/10-init.sh:ro
+    networks: [backend]
+
+  # ------------------------------------------------------------ ingestion (Phase 2)
+  docling:
+    <<: *hardening
+    profiles: [ingest]
+    image: ${DOCLING_IMAGE:-quay.io/docling-project/docling-serve:latest}
+    environment:
+      DOCLING_SERVE_ENABLE_REMOTE_SERVICES: "false"
+    networks: [backend]
+
+  # ------------------------------------------------------------ voice (only voice profiles)
+  whisper:
+    <<: *hardening
+    profiles: [voice]
+    image: ${WHISPER_IMAGE:-ghcr.io/ggml-org/whisper.cpp:main}
+    command: ["whisper-server", "--host", "0.0.0.0", "--port", "8080", "-m", "/models/${WHISPER_MODEL:-ggml-small.bin}"]
+    volumes:
+      - whisper-models:/models
+    networks: [models]
+
+  # ------------------------------------------------------------ private web research (opt-in egress)
+  searxng:
+    <<: *hardening
+    profiles: [research]
+    image: ${SEARXNG_IMAGE:-searxng/searxng:latest}
+    volumes:
+      - ./config/searxng:/etc/searxng:ro
+    networks: [backend, research]   # the only long-running service besides Caddy with outbound access
+
+  # ------------------------------------------------------------ SSO + MFA (regulated tier 2, all tier 3)
+  # After first start, create an OIDC provider for Open WebUI in Authentik and put the
+  # client id/secret in .env.secrets (OAUTH_CLIENT_ID, OAUTH_CLIENT_SECRET, OPENID_PROVIDER_URL).
+  authentik-redis:
+    <<: *hardening
+    profiles: [sso]
+    image: ${REDIS_IMAGE:-redis:7-alpine}
+    networks: [backend]
+
+  authentik-server:
+    <<: *hardening
+    profiles: [sso]
+    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server:latest}
+    command: server
+    env_file:
+      - path: .env.secrets        # AUTHENTIK_SECRET_KEY, AUTHENTIK_POSTGRESQL__PASSWORD
+        required: false
+    environment:
+      AUTHENTIK_REDIS__HOST: authentik-redis
+      AUTHENTIK_POSTGRESQL__HOST: postgres
+      AUTHENTIK_POSTGRESQL__USER: assistant
+      AUTHENTIK_POSTGRESQL__NAME: authentik
+      AUTHENTIK_DISABLE_UPDATE_CHECK: "true"
+      AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
+      AUTHENTIK_DISABLE_STARTUP_ANALYTICS: "true"
+    networks: [backend]
+
+  authentik-worker:
+    <<: *hardening
+    profiles: [sso]
+    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server:latest}
+    command: worker
+    env_file:
+      - path: .env.secrets
+        required: false
+    environment:
+      AUTHENTIK_REDIS__HOST: authentik-redis
+      AUTHENTIK_POSTGRESQL__HOST: postgres
+      AUTHENTIK_POSTGRESQL__USER: assistant
+      AUTHENTIK_POSTGRESQL__NAME: authentik
+      AUTHENTIK_DISABLE_UPDATE_CHECK: "true"
+      AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
+    networks: [backend]
+
+  # ------------------------------------------------------------ monitoring (tier 3; local only)
+  prometheus:
+    <<: *hardening
+    profiles: [observability]
+    image: ${PROMETHEUS_IMAGE:-prom/prometheus:latest}
+    command: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.retention.time=30d"]
+    secrets: [gateway_key]
+    volumes:
+      - ./config/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./config/monitoring/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus-data:/prometheus
+    networks: [backend, models]
+
+  grafana:
+    <<: *hardening
+    profiles: [observability]
+    image: ${GRAFANA_IMAGE:-grafana/grafana:latest}
+    environment:
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES: "false"
+      GF_SERVER_ROOT_URL: "%(protocol)s://%(domain)s/grafana/"
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+    volumes:
+      - ./config/monitoring/grafana:/etc/grafana/provisioning/datasources:ro
+      - grafana-data:/var/lib/grafana
+    networks: [backend]
+
+  loki:
+    <<: *hardening
+    profiles: [observability]
+    image: ${LOKI_IMAGE:-grafana/loki:latest}
+    volumes:
+      - loki-data:/loki
+    networks: [backend]
+
+  # ------------------------------------------------------------ Gateway: the only path to the model
+  gateway:
+    <<: *hardening
+    profiles: [ui]
+    build: {context: ., dockerfile: gateway/Dockerfile}
+    image: private-ai/gateway:local
+    env_file:
+      - path: .env.gateway        # generated by `make advise` (runtime URL, model, auth mode)
+        required: false
+      - path: .env.secrets        # GATEWAY_DATABASE_URL for Postgres tiers
+        required: false
+    environment:
+      GATEWAY_GATEWAY_KEY_FILE: /run/secrets/gateway_key
+      GATEWAY_MODEL_PINS: /pins/model-pins.txt
+    secrets: [gateway_key]
+    volumes:
+      - gateway-data:/data
+      - ./generated:/pins:ro
+    networks: [backend, models]
+
+  # Watches the folders in config/collections.yaml and indexes them (Recall, Phase 2).
+  ingest-worker:
+    <<: *hardening
+    profiles: [ingest]
+    image: private-ai/gateway:local
+    command: ["python", "-m", "gateway", "ingest", "--watch", "--config", "/config/collections.yaml"]
+    env_file:
+      - path: .env.gateway
+        required: false
+      - path: .env.secrets
+        required: false
+    environment:
+      GATEWAY_DOCLING_URL: http://docling:5001
+    volumes:
+      - gateway-data:/data
+      - ./config/collections.yaml:/config/collections.yaml:ro
+      - ${DOCUMENTS_DIR:-./documents}:/documents:ro      # read-only: the worker never changes your files
+    networks: [backend, models]
+
+  # Fetches web pages for private research (Phase 5). Lives on the research network only;
+  # the Gateway asks it for pages, it never sees anything else.
+  fetcher:
+    <<: *hardening
+    profiles: [research]
+    image: private-ai/gateway:local
+    command: ["python", "-m", "uvicorn", "gateway.fetcher:app", "--host", "0.0.0.0", "--port", "8090"]
+    networks: [backend, research]

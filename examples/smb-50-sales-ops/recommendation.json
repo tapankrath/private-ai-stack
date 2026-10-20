@@ -1,0 +1,640 @@
+{
+  "advisor_version": "0.2.0",
+  "profile_id": "smb-50-sales-ops",
+  "profile_name": "Example Distribution Co.",
+  "description": "50-person company with sales and operations teams needing shared knowledge search, drafting, and meeting transcription.",
+  "skill": "it_admin",
+  "latency": "instant",
+  "tier": 3,
+  "tier_name": "SMB on-prem",
+  "setup_effort": "2-5 days incl. SSO and backups (estimate)",
+  "capabilities": {
+    "enabled": {
+      "chat": [
+        "every setup needs one general model to answer questions",
+        "job 'general_qa'",
+        "job 'research'",
+        "job 'drafting'",
+        "job 'knowledge_recall'",
+        "job 'conversation_recall'",
+        "job 'data_analysis'"
+      ],
+      "embeddings": [
+        "job 'knowledge_recall'",
+        "job 'conversation_recall'"
+      ],
+      "reranker": [
+        "job 'knowledge_recall'"
+      ],
+      "document_parsing": [
+        "job 'knowledge_recall'",
+        "data type 'text'",
+        "data type 'pdf'",
+        "data type 'spreadsheets'",
+        "data type 'email_exports'"
+      ],
+      "long_context": [
+        "job 'data_analysis'",
+        "context_needs 'long'"
+      ],
+      "stt": [
+        "job 'transcription'",
+        "data type 'audio'"
+      ],
+      "multilingual": [
+        "languages ['es']"
+      ],
+      "tool_calling": [
+        "3 agent(s)"
+      ],
+      "web_research": [
+        "features.web_research: true"
+      ]
+    },
+    "excluded": {
+      "vision": "No job needs to understand photos or charts.",
+      "ocr": "No scans or images to read.",
+      "code": "Coding is not a primary job; the general model handles occasional code questions."
+    }
+  },
+  "plan": {
+    "runtime": "vllm",
+    "runtime_name": "vLLM",
+    "runtime_mode": "container",
+    "runtime_alternatives": [
+      "SGLang"
+    ],
+    "runtime_why": "8+ concurrent sessions on NVIDIA: continuous batching gives far higher throughput.",
+    "hardware": {
+      "platform": "nvidia",
+      "hw_key": "rtx_3090",
+      "source": "pc-2x3090-48",
+      "compute_class": "medium"
+    },
+    "usable_memory_gb": 48.0,
+    "usable_memory_basis": "48 GB usable for models (option spec, estimate)",
+    "memory_budget_gb": 38.4,
+    "memory_used_gb": 34.51,
+    "memory_use_pct": 71.9,
+    "bandwidth_gbps": 936,
+    "tflops_fp16": 71,
+    "tokens_per_sec_target": 20,
+    "ttft_s_est": 0.8,
+    "general": {
+      "id": "qwen3.6-35b-a3b",
+      "name": "Qwen3.6 35B-A3B",
+      "role": "general",
+      "quant": "AWQ",
+      "architecture": "moe",
+      "total_params_b": 35.0,
+      "active_params_b": 3.0,
+      "context_tokens": 16384,
+      "kv_cache_type": "q8_0",
+      "sessions": 18,
+      "memory": {
+        "weights_gb": 20.12,
+        "kv_cache_gb": 6.04,
+        "overhead_gb": 0.6,
+        "total_gb": 26.76
+      },
+      "tokens_per_sec_est": 298.4,
+      "prefill_tokens_per_sec_est": 9467.0,
+      "capabilities": [
+        "chat",
+        "multilingual",
+        "tool_calling",
+        "long_context",
+        "vision"
+      ],
+      "license": "Apache-2.0",
+      "commercial_use": "yes",
+      "pull": "Qwen/Qwen3.6-35B-A3B",
+      "resident": true
+    },
+    "specialists": [],
+    "aux": [
+      {
+        "id": "bge-m3",
+        "name": "BGE-M3",
+        "role": "embeddings",
+        "memory_gb": 1.2,
+        "license": "MIT",
+        "commercial_use": "yes",
+        "pull": "bge-m3",
+        "resident": true
+      },
+      {
+        "id": "bge-reranker-v2-m3",
+        "name": "BGE Reranker v2 M3",
+        "role": "reranker",
+        "memory_gb": 1.2,
+        "license": "Apache-2.0",
+        "commercial_use": "yes",
+        "pull": "BAAI/bge-reranker-v2-m3",
+        "resident": true
+      },
+      {
+        "id": "whisper-large-v3-turbo",
+        "name": "Whisper large-v3-turbo (whisper.cpp)",
+        "role": "stt",
+        "memory_gb": 2.0,
+        "license": "MIT",
+        "commercial_use": "yes",
+        "pull": "ggml-large-v3-turbo.bin",
+        "resident": true
+      },
+      {
+        "id": "qwen3-1.7b",
+        "name": "Qwen3 1.7B",
+        "role": "fast_small",
+        "quant": "Q8_0",
+        "architecture": "dense",
+        "total_params_b": 1.7,
+        "active_params_b": 1.7,
+        "context_tokens": 8192,
+        "kv_cache_type": "f16",
+        "sessions": 1,
+        "memory": {
+          "weights_gb": 1.81,
+          "kv_cache_gb": 0.94,
+          "overhead_gb": 0.6,
+          "total_gb": 3.35
+        },
+        "tokens_per_sec_est": 285.0,
+        "prefill_tokens_per_sec_est": 16706.0,
+        "capabilities": [
+          "chat",
+          "multilingual"
+        ],
+        "license": "Apache-2.0",
+        "commercial_use": "yes",
+        "pull": "qwen3:1.7b",
+        "resident": true,
+        "note": "Small sidecar model for summaries and routing."
+      }
+    ],
+    "rejected": [],
+    "acceptable": true,
+    "notes": [
+      "Context reduced from 32,768 to 16,384 tokens to fit memory.",
+      "KV cache quantized to q8_0 to fit memory (needs flash attention; small quality cost)."
+    ]
+  },
+  "procurement": {
+    "id": "pc-2x3090-48",
+    "name": "Workstation with two RTX 3090 24 GB (48 GB total, used GPUs)",
+    "price_usd": [
+      2600,
+      3600
+    ],
+    "market_tier": "consumer_ai_workstation",
+    "last_verified": null,
+    "general_model": "Qwen3.6 35B-A3B AWQ",
+    "tokens_per_sec_est": 298.4,
+    "context_tokens": 16384,
+    "rank": 68
+  },
+  "market_tier": "consumer_ai_workstation",
+  "components": {
+    "included": [
+      {
+        "id": "vllm",
+        "name": "vLLM (OpenAI-compatible)",
+        "reason": "8+ concurrent sessions on NVIDIA: continuous batching gives far higher throughput.",
+        "compose_profile": "vllm",
+        "alternatives": [
+          "SGLang"
+        ]
+      },
+      {
+        "id": "ollama",
+        "name": "Ollama sidecar",
+        "reason": "Serves embeddings and any small or specialist models.",
+        "compose_profile": "ollama",
+        "alternatives": []
+      },
+      {
+        "id": "open-webui",
+        "name": "Open WebUI",
+        "reason": "Chat UI bound to localhost/LAN, telemetry disabled.",
+        "compose_profile": "ui",
+        "alternatives": [
+          "AnythingLLM",
+          "custom thin UI on the Gateway"
+        ]
+      },
+      {
+        "id": "caddy",
+        "name": "Caddy reverse proxy",
+        "reason": "Caddy (only container with a published port; local CA TLS)",
+        "compose_profile": "ui",
+        "alternatives": [
+          "Traefik"
+        ]
+      },
+      {
+        "id": "gateway",
+        "name": "Gateway API (Phase 1)",
+        "reason": "Owns policy, audit log, RAG, memory and conversation history.",
+        "compose_profile": "gateway",
+        "alternatives": []
+      },
+      {
+        "id": "backups",
+        "name": "Encrypted backups (restic)",
+        "reason": "restic (encrypted) to local disk + optional offline drive",
+        "compose_profile": null,
+        "alternatives": [
+          "borg"
+        ]
+      },
+      {
+        "id": "model-pinning",
+        "name": "Model pinning",
+        "reason": "Model files pinned by checksum; no auto-upgrade; a new version must pass the golden-set eval before promotion.",
+        "compose_profile": null,
+        "alternatives": []
+      },
+      {
+        "id": "postgres",
+        "name": "Postgres",
+        "reason": "Shared conversation, metadata and ACL store for multiple users.",
+        "compose_profile": "db",
+        "alternatives": []
+      },
+      {
+        "id": "accounts",
+        "name": "Per-user accounts",
+        "reason": "Every person has their own login and history.",
+        "compose_profile": null,
+        "alternatives": []
+      },
+      {
+        "id": "vector-store",
+        "name": "Postgres + pgvector + tsvector (row-level security for ACLs)",
+        "reason": "Semantic + keyword (hybrid) search over documents and history.",
+        "compose_profile": "db",
+        "alternatives": [
+          "Qdrant (payload filters) + Postgres"
+        ]
+      },
+      {
+        "id": "docling",
+        "name": "Docling document parser",
+        "reason": "Parses PDFs, Office files and email exports locally.",
+        "compose_profile": "ingest",
+        "alternatives": [
+          "Unstructured",
+          "Apache Tika"
+        ]
+      },
+      {
+        "id": "whisper",
+        "name": "whisper.cpp server",
+        "reason": "Meetings and voice notes need local speech-to-text.",
+        "compose_profile": "voice",
+        "alternatives": []
+      },
+      {
+        "id": "searxng",
+        "name": "SearXNG (private web research)",
+        "reason": "Private metasearch: searches are not tied to your identity. The only service allowed outbound, and only to search engines. Regulated data is present, so this is a named, audited egress exception you opted into.",
+        "compose_profile": "research",
+        "alternatives": []
+      },
+      {
+        "id": "authentik",
+        "name": "Authentik (OIDC SSO + MFA)",
+        "reason": "Central login with MFA (requested)",
+        "compose_profile": "sso",
+        "alternatives": [
+          "Keycloak"
+        ]
+      },
+      {
+        "id": "rbac",
+        "name": "Role-based access control",
+        "reason": "Roles from SSO groups decide which collections each user can search.",
+        "compose_profile": null,
+        "alternatives": []
+      },
+      {
+        "id": "observability",
+        "name": "Prometheus + Grafana + Loki",
+        "reason": "Capacity, latency, queue depth and ingestion monitoring.",
+        "compose_profile": "observability",
+        "alternatives": []
+      },
+      {
+        "id": "agent-watchdog",
+        "name": "Agent watchdog",
+        "reason": "Always-on agents: health checks, automatic restart, alerts; runs only pinned models.",
+        "compose_profile": null,
+        "alternatives": []
+      },
+      {
+        "id": "connectors",
+        "name": "Scoped read-only connectors: calendar_readonly",
+        "reason": "Requested. OAuth with minimal read-only scopes, tokens in the vault, per-connector kill switch, 'last accessed' log. (Phase 5)",
+        "compose_profile": null,
+        "alternatives": []
+      }
+    ],
+    "excluded": [
+      {
+        "id": "ocr",
+        "name": "OCR pipeline",
+        "reason": "No scans or images to read."
+      },
+      {
+        "id": "cloud-burst",
+        "name": "Cloud burst mode",
+        "reason": "Off by default. The advisor never turns it on."
+      },
+      {
+        "id": "desktop-installs",
+        "name": "Per-user desktop installs",
+        "reason": "One shared server is simpler to secure, back up and update."
+      }
+    ]
+  },
+  "excluded_models": [
+    {
+      "id": "vision",
+      "name": "Vision-language model",
+      "reason": "No job needs to understand photos or charts."
+    },
+    {
+      "id": "code",
+      "name": "Code model",
+      "reason": "Coding is not a primary job; the general model handles occasional code questions."
+    }
+  ],
+  "upgrades_required": false,
+  "upgrade_options": [],
+  "good_better_best": [],
+  "disk_estimate_gb": 1211.3,
+  "licenses": [
+    {
+      "model": "Qwen3.6 35B-A3B",
+      "license": "Apache-2.0",
+      "open_weight": true,
+      "osi_open_source": true,
+      "commercial_use": "yes",
+      "conditions": null,
+      "triggers": [],
+      "last_verified": "2026-10-19"
+    },
+    {
+      "model": "BGE-M3",
+      "license": "MIT",
+      "open_weight": true,
+      "osi_open_source": true,
+      "commercial_use": "yes",
+      "conditions": null,
+      "triggers": [],
+      "last_verified": null
+    },
+    {
+      "model": "BGE Reranker v2 M3",
+      "license": "Apache-2.0",
+      "open_weight": true,
+      "osi_open_source": true,
+      "commercial_use": "yes",
+      "conditions": null,
+      "triggers": [],
+      "last_verified": null
+    },
+    {
+      "model": "Whisper large-v3-turbo (whisper.cpp)",
+      "license": "MIT",
+      "open_weight": true,
+      "osi_open_source": true,
+      "commercial_use": "yes",
+      "conditions": null,
+      "triggers": [],
+      "last_verified": null
+    },
+    {
+      "model": "Qwen3 1.7B",
+      "license": "Apache-2.0",
+      "open_weight": true,
+      "osi_open_source": true,
+      "commercial_use": "yes",
+      "conditions": null,
+      "triggers": [],
+      "last_verified": null
+    }
+  ],
+  "customization": {
+    "post_training": {
+      "status": "planned",
+      "base_model": "Qwen3.6 35B-A3B",
+      "license_check": "yes",
+      "gate": "RAG first. Start only when the golden-set eval shows RAG alone misses domain terms or behavior.",
+      "requires": [
+        "dataset sensitivity review",
+        "versioned LoRA adapters",
+        "before/after eval on the golden set",
+        "runs locally; weights and data never leave"
+      ],
+      "justification": "Domain terminology/workflows not captured by RAG alone; confirm with eval set first."
+    },
+    "distillation": {
+      "status": "planned",
+      "teacher": "GLM-5.3-Flash",
+      "teacher_license": "MIT",
+      "teacher_distillation_allowed": "yes",
+      "student": "Qwen3.6 35B-A3B",
+      "why": "Larger-model quality on the serving hardware / high concurrency.",
+      "note": "The teacher can run temporarily on rented or borrowed hardware you control; the student serves users.",
+      "requires": [
+        "teacher license permits distillation",
+        "before/after eval",
+        "versioned promotion"
+      ],
+      "justification": "Serve many concurrent users on smaller hardware."
+    },
+    "abliteration": {
+      "status": "not_requested"
+    }
+  },
+  "why_local": [
+    {
+      "benefit": "security",
+      "weight": 4,
+      "text": "You control the whole chain: the model, its exact version, the serving software and who can reach it. No outside service joins your attack surface."
+    },
+    {
+      "benefit": "availability",
+      "weight": 3,
+      "text": "No rate limits, no outages caused by someone else's demand, no surprise deprecations. A validated, pinned model behaves the same next month, which matters most for your always-on agents."
+    },
+    {
+      "benefit": "privacy",
+      "weight": 2,
+      "text": "Prompts, documents and answers never leave your network. That is a simpler guarantee than any contract a provider can offer, and it matters for the regulated data you hold."
+    },
+    {
+      "benefit": "customization",
+      "weight": 1,
+      "text": "Open weights let you train on your own material or distill a faster model, locally, without handing data or weights to a provider."
+    }
+  ],
+  "blockers": [
+    {
+      "blocker": "cost",
+      "guidance": "Start with the honest cost comparison below and the smallest pilot; only buy hardware after the pilot proves value."
+    },
+    {
+      "blocker": "security_review",
+      "guidance": "A security review packet (data flows, egress policy, threat model, model provenance and licenses, pinning and update process) is generated next to this file."
+    }
+  ],
+  "pilot_plan": [
+    "Days 1-2: run the advisor, install only the recommended runtime and model, confirm outbound traffic is blocked (make egress-test).",
+    "Days 3-4: write 20-30 real questions your team asks (the golden set) and record today's answers and time spent.",
+    "Days 5-7: daily use by one or two people; log what worked and what did not.",
+    "Days 8-10: if documents matter, ingest one folder and test search with citations against the golden set.",
+    "Days 11-12: review the audit log, memory use and speed against the estimates here.",
+    "Days 13-14: decide go / adjust / stop, using the golden-set results and the cost comparison."
+  ],
+  "generate": [
+    "security_review_packet",
+    "tco_comparison"
+  ],
+  "privacy": {
+    "egress": "Deny all outbound by default. Model downloads happen only in a separate `make pull` step. SearXNG may reach search engines (named exception).",
+    "encryption_at_rest": "Full-disk encryption required (FileVault / LUKS / BitLocker); encrypted backups.",
+    "encryption_in_transit": "TLS on the LAN via Caddy's local CA",
+    "remote_access": "None by default; if needed, WireGuard/Tailscale only. Never port-forward.",
+    "retention_days": 365,
+    "documents_retention": "keep_until_deleted",
+    "memory_cards": "admin_and_user_managed",
+    "sensitivity_tiers": [
+      "Public",
+      "Personal",
+      "Confidential",
+      "Restricted"
+    ],
+    "restricted_tier_enforced": true,
+    "acl_enforcement": "Per-user and per-collection ACLs enforced in the database query (Postgres row-level security), not only in the UI.",
+    "collections": [
+      "shared",
+      "personal"
+    ],
+    "regulated_categories": [
+      "client_confidential",
+      "financial"
+    ],
+    "connectors": "calendar_readonly (read-only)",
+    "web_research": "on",
+    "cloud_burst": "off",
+    "compliance_note": "Regulated data present. These controls support privacy obligations but do not by themselves make you compliant with HIPAA, PCI, GDPR or similar; review with your compliance advisor."
+  },
+  "cloud_burst": {
+    "enabled": false
+  },
+  "warnings": [
+    "Assumption: Departments: sales, operations, finance, leadership \u2014 one collection each.",
+    "Context reduced from 32,768 to 16,384 tokens to fit memory.",
+    "KV cache quantized to q8_0 to fit memory (needs flash attention; small quality cost)."
+  ],
+  "estimates_note": "All memory, speed, disk and price figures are estimates, not benchmarks.",
+  "tco": {
+    "months": 36,
+    "options": {
+      "local": {
+        "label": "Local (this recommendation)",
+        "total_usd": 50576,
+        "breakdown": {
+          "hardware": 3100,
+          "power": 1776,
+          "admin_time": 43200,
+          "networking": 2500
+        },
+        "hardware_note": "$2,600-$3,600 for Workstation with two RTX 3090 24 GB (48 GB total, used GPUs) (estimate)"
+      },
+      "api_open": {
+        "label": "Hosted open-weight model API (e.g. Qwen3.6 35B-A3B via a router)",
+        "total_usd": 1372
+      },
+      "api_frontier": {
+        "label": "Frontier model API (mid-tier frontier model)",
+        "total_usd": 54108
+      },
+      "subscription": {
+        "label": "Flat-rate AI subscription (team plan, per user)",
+        "total_usd": 45778,
+        "note": "includes ~$778 of API usage for agents (subscriptions rarely cover them)"
+      }
+    },
+    "local": {
+      "label": "Local (this recommendation)",
+      "total_usd": 50576,
+      "breakdown": {
+        "hardware": 3100,
+        "power": 1776,
+        "admin_time": 43200,
+        "networking": 2500
+      },
+      "hardware_note": "$2,600-$3,600 for Workstation with two RTX 3090 24 GB (48 GB total, used GPUs) (estimate)"
+    },
+    "cheapest": "api_open",
+    "local_is_cheapest": false,
+    "verdict": "On these estimates, a hosted open-weight model API would be cheaper than local by about $49,204 over three years. Local is recommended here for security, availability, privacy, not price. Note that the hosted options would send prompts and documents off-site, which this profile's regulated data makes a compliance question.",
+    "token_volume": {
+      "queries": 792000.0,
+      "human_in": 6336000000.0,
+      "human_out": 396000000.0,
+      "agent_in": 6480000000,
+      "agent_out": 648000000
+    },
+    "stale_or_unverified_prices": [
+      "running costs",
+      "frontier API price",
+      "subscription price",
+      "price of Workstation with two RTX 3090 24 GB (48 GB total, used GPUs)"
+    ],
+    "assumptions": [
+      "50 user(s) x 20 queries/day x 22 days/month",
+      "8,000 input + 500 output tokens per query",
+      "3 agent(s) always on",
+      "admin time at $75/hour; electricity $0.17/kWh",
+      "High-memory machines may hold resale value while memory prices are high; resale is not counted."
+    ]
+  },
+  "hardware_cost": "$2,600-$3,600 for Workstation with two RTX 3090 24 GB (48 GB total, used GPUs) (estimate)",
+  "tokens": [
+    "agent_watchdog",
+    "audit_log",
+    "collection_acls",
+    "conversation_history",
+    "customize_track_distillation",
+    "customize_track_post_training",
+    "distillation",
+    "embeddings",
+    "encrypted_backups",
+    "fast_small_model",
+    "general_chat_mid",
+    "gpu_server",
+    "hybrid_search",
+    "live_connectors",
+    "long_context",
+    "model_pinning",
+    "monitoring",
+    "multilingual",
+    "per_user_accounts",
+    "post_training",
+    "rbac",
+    "reranker",
+    "reranker_large",
+    "restricted_tier",
+    "searxng",
+    "speech_to_text",
+    "sso",
+    "tier_3",
+    "tool_calling",
+    "vllm"
+  ]
+}

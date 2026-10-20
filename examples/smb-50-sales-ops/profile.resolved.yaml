@@ -1,0 +1,120 @@
+schema_version: 1
+profile_id: smb-50-sales-ops
+description: 50-person company with sales and operations teams needing shared knowledge
+  search, drafting, and meeting transcription.
+org:
+  type: smb
+  name: Example Distribution Co.
+  technical_skill: it_admin
+users:
+  count: 50
+  peak_concurrent: 15
+jobs:
+- general_qa
+- research
+- drafting
+- knowledge_recall
+- conversation_recall
+- data_analysis
+- transcription
+data:
+  types:
+  - text
+  - pdf
+  - spreadsheets
+  - audio
+  - email_exports
+  volume_gb: 600
+  document_count: 300000
+  growth_gb_per_month: 15
+  languages:
+  - en
+  - es
+sensitivity:
+  level: high
+  regulated_data:
+  - client_confidential
+  - financial
+  air_gapped: false
+  data_residency: on_prem_datacenter
+usage:
+  queries_per_user_per_day: 20
+  latency: instant
+  offline_required: false
+  context_needs: long
+hardware:
+  autodetect: false
+  override: {}
+  budget_usd: lt_20000
+  deployment_preference: on_prem_cluster
+features:
+  web_research: true
+  connectors:
+  - calendar_readonly
+  cloud_burst: false
+  sso: true
+retention:
+  conversations_days: 365
+  documents: keep_until_deleted
+  memory_cards: admin_and_user_managed
+workload:
+  shape: prompt_heavy
+  agents:
+    count: 3
+    always_on: true
+customization:
+  post_training:
+    requested: true
+    justification: Domain terminology/workflows not captured by RAG alone; confirm
+      with eval set first.
+  distillation:
+    requested: true
+    justification: Serve many concurrent users on smaller hardware.
+  abliteration:
+    requested: false
+    justification: ''
+    admin_approved: false
+blockers:
+- cost
+- security_review
+priorities:
+- security
+- availability
+- privacy
+- customization
+- cost
+licensing:
+  use: commercial
+assumptions:
+- "Departments: sales, operations, finance, leadership \u2014 one collection each."
+expected:
+  tier: 3
+  runtime: vllm
+  must_include:
+  - general_chat_mid_or_large
+  - embeddings
+  - reranker
+  - speech_to_text
+  - multilingual
+  - sso
+  - rbac
+  - collection_acls
+  - searxng
+  - monitoring
+  - encrypted_backups
+  must_include_extra:
+  - model_pinning
+  - agent_watchdog
+  - customize_track_post_training
+  - customize_track_distillation
+  must_exclude:
+  - vision
+  - code_model
+  - cloud_burst
+  - per_user_desktop_installs
+  - abliteration
+  must_generate:
+  - security_review_packet
+  - tco_comparison
+  license_filter: commercial_allowed
+  max_memory_use_pct: 80

@@ -1,0 +1,102 @@
+schema_version: 1
+profile_id: solo-researcher-16gb
+description: Independent researcher who wants private Q&A, research summaries, and
+  searchable chat history on a laptop.
+org:
+  type: individual
+  name: Solo Researcher
+  technical_skill: power_user
+users:
+  count: 1
+  peak_concurrent: 1
+jobs:
+- general_qa
+- research
+- writing
+- conversation_recall
+- knowledge_recall
+data:
+  types:
+  - text
+  - pdf
+  volume_gb: 3
+  document_count: 2500
+  growth_gb_per_month: 0.2
+  languages:
+  - en
+sensitivity:
+  level: moderate
+  regulated_data: []
+  air_gapped: false
+  data_residency: local_device
+usage:
+  queries_per_user_per_day: 40
+  latency: few_seconds
+  offline_required: true
+  context_needs: standard
+hardware:
+  autodetect: true
+  override:
+    platform: apple_silicon
+    ram_gb: 16
+    gpu: integrated
+    vram_gb: 0
+    free_disk_gb: 120
+  budget_usd: none
+  deployment_preference: same_machine
+features:
+  web_research: true
+  connectors: []
+  cloud_burst: false
+  sso: false
+retention:
+  conversations_days: 730
+  documents: keep_until_deleted
+  memory_cards: user_managed
+workload:
+  shape: prompt_heavy
+  agents:
+    count: 0
+    always_on: false
+customization:
+  post_training:
+    requested: false
+    justification: ''
+  distillation:
+    requested: false
+    justification: ''
+  abliteration:
+    requested: false
+    justification: ''
+    admin_approved: false
+blockers:
+- where_to_begin
+priorities:
+- privacy
+- availability
+- cost
+licensing:
+  use: personal
+assumptions:
+- Occasional code questions handled by general model.
+expected:
+  tier: 1
+  runtime: ollama
+  must_include:
+  - general_chat_small
+  - embeddings
+  - conversation_history
+  - hybrid_search
+  - searxng
+  must_exclude:
+  - vision
+  - speech_to_text
+  - code_model
+  - reranker_large
+  - vllm
+  - sso
+  - gpu_server
+  - post_training
+  - distillation
+  - abliteration
+  max_memory_use_pct: 80

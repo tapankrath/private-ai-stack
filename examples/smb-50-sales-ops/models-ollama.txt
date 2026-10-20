@@ -1,0 +1,4 @@
+# Pulled by `make pull` (the only step with internet access). Never add ':cloud' tags.
+bge-m3
+# whisper.cpp model (download separately into the whisper-models volume): ggml-large-v3-turbo.bin
+qwen3:1.7b

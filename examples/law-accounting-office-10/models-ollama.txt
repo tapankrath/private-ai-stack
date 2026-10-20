@@ -1,0 +1,4 @@
+# AIR-GAPPED: pull these on a separate connected machine, verify checksums, and import them from an offline drive. This machine never downloads.
+# Gemma 4 26B A4B: default tag (Q4_K_M)
+gemma4:26b
+nomic-embed-text

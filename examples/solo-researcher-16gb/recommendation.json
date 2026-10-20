@@ -1,0 +1,468 @@
+{
+  "advisor_version": "0.2.0",
+  "profile_id": "solo-researcher-16gb",
+  "profile_name": "Solo Researcher",
+  "description": "Independent researcher who wants private Q&A, research summaries, and searchable chat history on a laptop.",
+  "skill": "power_user",
+  "latency": "few_seconds",
+  "tier": 1,
+  "tier_name": "Personal (localhost only)",
+  "setup_effort": "about 1 hour (estimate)",
+  "capabilities": {
+    "enabled": {
+      "chat": [
+        "every setup needs one general model to answer questions",
+        "job 'general_qa'",
+        "job 'research'",
+        "job 'writing'",
+        "job 'conversation_recall'",
+        "job 'knowledge_recall'"
+      ],
+      "embeddings": [
+        "job 'conversation_recall'",
+        "job 'knowledge_recall'"
+      ],
+      "reranker": [
+        "job 'knowledge_recall'"
+      ],
+      "document_parsing": [
+        "job 'knowledge_recall'",
+        "data type 'text'",
+        "data type 'pdf'"
+      ],
+      "web_research": [
+        "features.web_research: true"
+      ]
+    },
+    "excluded": {
+      "vision": "No job needs to understand photos or charts.",
+      "long_context": "Standard context (about 8K tokens) covers this use.",
+      "ocr": "No scans or images to read.",
+      "stt": "No meetings, voice notes or audio to process.",
+      "code": "Coding is not a primary job; the general model handles occasional code questions.",
+      "tool_calling": "No agent tasks or agents.",
+      "multilingual": "All declared languages are English."
+    }
+  },
+  "plan": {
+    "runtime": "ollama",
+    "runtime_name": "Ollama",
+    "runtime_mode": "native",
+    "runtime_alternatives": [
+      "MLX (mlx-lm server)",
+      "llama.cpp server"
+    ],
+    "runtime_why": "Ollama for easy model management; MLX is the faster option for power users.",
+    "hardware": {
+      "platform": "apple",
+      "hw_key": "apple_m2",
+      "source": "profile",
+      "compute_class": "low"
+    },
+    "usable_memory_gb": 10.72,
+    "usable_memory_basis": "67% of 16 GB unified memory (macOS GPU limit, default)",
+    "memory_budget_gb": 8.58,
+    "memory_used_gb": 7.73,
+    "memory_use_pct": 72.1,
+    "bandwidth_gbps": 100,
+    "tflops_fp16": 3.6,
+    "tokens_per_sec_target": 8,
+    "ttft_s_est": 11.4,
+    "general": {
+      "id": "qwen3-8b",
+      "name": "Qwen3 8B",
+      "role": "general",
+      "quant": "Q4_K_M",
+      "architecture": "dense",
+      "total_params_b": 8.2,
+      "active_params_b": 8.2,
+      "context_tokens": 8192,
+      "kv_cache_type": "f16",
+      "sessions": 1,
+      "memory": {
+        "weights_gb": 4.97,
+        "kv_cache_gb": 1.21,
+        "overhead_gb": 0.6,
+        "total_gb": 6.78
+      },
+      "tokens_per_sec_est": 11.1,
+      "prefill_tokens_per_sec_est": 176.0,
+      "capabilities": [
+        "chat",
+        "multilingual",
+        "tool_calling",
+        "long_context"
+      ],
+      "license": "Apache-2.0",
+      "commercial_use": "yes",
+      "pull": "qwen3:8b",
+      "resident": true
+    },
+    "specialists": [],
+    "aux": [
+      {
+        "id": "nomic-embed-text",
+        "name": "nomic-embed-text v1.5",
+        "role": "embeddings",
+        "memory_gb": 0.35,
+        "license": "Apache-2.0",
+        "commercial_use": "yes",
+        "pull": "nomic-embed-text",
+        "resident": true
+      },
+      {
+        "id": "bge-reranker-base",
+        "name": "BGE Reranker Base",
+        "role": "reranker",
+        "memory_gb": 0.6,
+        "license": "MIT",
+        "commercial_use": "yes",
+        "pull": "BAAI/bge-reranker-base",
+        "resident": true
+      }
+    ],
+    "rejected": [
+      "Qwen3.8 Flash-Next: does not fit in memory",
+      "Llama 3.3 70B Instruct: does not fit in memory",
+      "Qwen3.6 35B-A3B: does not fit in memory",
+      "Gemma 4 31B: does not fit in memory",
+      "Qwen3 32B: does not fit in memory",
+      "Gemma 4 26B A4B: does not fit in memory",
+      "Qwen3 30B-A3B (mixture of experts): does not fit in memory",
+      "Mistral Small 24B Instruct: does not fit in memory",
+      "Qwen3 14B: does not fit in memory",
+      "Phi-4 14B: does not fit in memory"
+    ],
+    "acceptable": true,
+    "notes": [
+      "Exact chip/GPU not given; speed assumes a conservative apple_m2.",
+      "Reading a typical 2,000-token prompt takes ~11.4s before the answer starts (prefill, estimate). Prompt-heavy work favors higher-compute GPUs."
+    ]
+  },
+  "procurement": null,
+  "market_tier": "consumer_ai_workstation",
+  "components": {
+    "included": [
+      {
+        "id": "ollama-native",
+        "name": "Ollama (installed natively on macOS)",
+        "reason": "Ollama for easy model management; MLX is the faster option for power users.",
+        "compose_profile": null,
+        "alternatives": [
+          "MLX (mlx-lm server)",
+          "llama.cpp server"
+        ]
+      },
+      {
+        "id": "open-webui",
+        "name": "Open WebUI",
+        "reason": "Chat UI bound to localhost/LAN, telemetry disabled.",
+        "compose_profile": "ui",
+        "alternatives": [
+          "AnythingLLM",
+          "custom thin UI on the Gateway"
+        ]
+      },
+      {
+        "id": "caddy",
+        "name": "Caddy reverse proxy",
+        "reason": "Caddy (only container with a published port; local CA TLS)",
+        "compose_profile": "ui",
+        "alternatives": [
+          "Traefik"
+        ]
+      },
+      {
+        "id": "gateway",
+        "name": "Gateway API (Phase 1)",
+        "reason": "Owns policy, audit log, RAG, memory and conversation history.",
+        "compose_profile": "gateway",
+        "alternatives": []
+      },
+      {
+        "id": "backups",
+        "name": "Encrypted backups (restic)",
+        "reason": "restic (encrypted) to local disk + optional offline drive",
+        "compose_profile": null,
+        "alternatives": [
+          "borg"
+        ]
+      },
+      {
+        "id": "model-pinning",
+        "name": "Model pinning",
+        "reason": "Model files pinned by checksum; no auto-upgrade; a new version must pass the golden-set eval before promotion.",
+        "compose_profile": null,
+        "alternatives": []
+      },
+      {
+        "id": "vector-store",
+        "name": "sqlite-vec + SQLite FTS5 (in-process, no extra service)",
+        "reason": "Semantic + keyword (hybrid) search over documents and history.",
+        "compose_profile": null,
+        "alternatives": [
+          "LanceDB",
+          "Chroma",
+          "Qdrant"
+        ]
+      },
+      {
+        "id": "docling",
+        "name": "Docling document parser",
+        "reason": "Parses PDFs, Office files and email exports locally.",
+        "compose_profile": "ingest",
+        "alternatives": [
+          "Unstructured",
+          "Apache Tika"
+        ]
+      },
+      {
+        "id": "searxng",
+        "name": "SearXNG (private web research)",
+        "reason": "Private metasearch: searches are not tied to your identity. The only service allowed outbound, and only to search engines.",
+        "compose_profile": "research",
+        "alternatives": []
+      }
+    ],
+    "excluded": [
+      {
+        "id": "vllm",
+        "name": "vLLM / SGLang",
+        "reason": "Only 1 concurrent session(s), or no NVIDIA GPU; the simpler runtime is enough."
+      },
+      {
+        "id": "postgres",
+        "name": "Postgres server",
+        "reason": "Single user: SQLite on the encrypted disk is enough."
+      },
+      {
+        "id": "ocr",
+        "name": "OCR pipeline",
+        "reason": "No scans or images to read."
+      },
+      {
+        "id": "whisper",
+        "name": "Speech-to-text (whisper.cpp)",
+        "reason": "No meetings, voice notes or audio to process."
+      },
+      {
+        "id": "authentik",
+        "name": "SSO (Authentik/Keycloak)",
+        "reason": "Single user on localhost."
+      },
+      {
+        "id": "observability",
+        "name": "Prometheus / Grafana / Loki",
+        "reason": "Too heavy for this tier; the Gateway health page covers basics."
+      },
+      {
+        "id": "connectors",
+        "name": "Live account connectors (email, social, banking)",
+        "reason": "None requested. Use exported files (.mbox, notes exports) instead of account access."
+      },
+      {
+        "id": "cloud-burst",
+        "name": "Cloud burst mode",
+        "reason": "Off by default. The advisor never turns it on."
+      },
+      {
+        "id": "gpu-server",
+        "name": "Dedicated GPU server",
+        "reason": "One user on their own machine does not need a server."
+      }
+    ]
+  },
+  "excluded_models": [
+    {
+      "id": "vision",
+      "name": "Vision-language model",
+      "reason": "No job needs to understand photos or charts."
+    },
+    {
+      "id": "code",
+      "name": "Code model",
+      "reason": "Coding is not a primary job; the general model handles occasional code questions."
+    },
+    {
+      "id": "stt",
+      "name": "Speech-to-text model",
+      "reason": "No meetings, voice notes or audio to process."
+    },
+    {
+      "id": "fast_small",
+      "name": "Separate small routing/summary model",
+      "reason": "The general model handles summaries; saves memory at this tier."
+    },
+    {
+      "id": "post_training",
+      "name": "Post-training on your data",
+      "reason": "Not requested."
+    },
+    {
+      "id": "distillation",
+      "name": "Distillation to a smaller model",
+      "reason": "Not requested."
+    }
+  ],
+  "upgrades_required": false,
+  "upgrade_options": [],
+  "good_better_best": [],
+  "disk_estimate_gb": 29.0,
+  "licenses": [],
+  "customization": {
+    "post_training": {
+      "status": "not_requested"
+    },
+    "distillation": {
+      "status": "not_requested"
+    },
+    "abliteration": {
+      "status": "not_requested"
+    }
+  },
+  "why_local": [
+    {
+      "benefit": "privacy",
+      "weight": 3,
+      "text": "Prompts, documents and answers never leave this computer. That is a simpler guarantee than any contract a provider can offer."
+    },
+    {
+      "benefit": "availability",
+      "weight": 2,
+      "text": "No rate limits, no outages caused by someone else's demand, no surprise deprecations. A validated, pinned model behaves the same next month."
+    },
+    {
+      "benefit": "security",
+      "weight": 1,
+      "text": "You control the whole chain: the model, its exact version, the serving software and who can reach it. No outside service joins your attack surface."
+    }
+  ],
+  "blockers": [
+    {
+      "blocker": "where_to_begin",
+      "guidance": "Follow the two-week pilot plan on the hardware you already have."
+    }
+  ],
+  "pilot_plan": [
+    "Days 1-2: run the advisor, install only the recommended runtime and model, confirm outbound traffic is blocked (make egress-test).",
+    "Days 3-4: write 20-30 real questions your team asks (the golden set) and record today's answers and time spent.",
+    "Days 5-7: daily use by one or two people; log what worked and what did not.",
+    "Days 8-10: if documents matter, ingest one folder and test search with citations against the golden set.",
+    "Days 11-12: review the audit log, memory use and speed against the estimates here.",
+    "Days 13-14: decide go / adjust / stop, using the golden-set results and the cost comparison."
+  ],
+  "generate": [
+    "tco_comparison"
+  ],
+  "privacy": {
+    "egress": "Deny all outbound by default. Model downloads happen only in a separate `make pull` step. SearXNG may reach search engines (named exception).",
+    "encryption_at_rest": "Full-disk encryption required (FileVault / LUKS / BitLocker); encrypted backups.",
+    "encryption_in_transit": "localhost only",
+    "remote_access": "None by default; if needed, WireGuard/Tailscale only. Never port-forward.",
+    "retention_days": 730,
+    "documents_retention": "keep_until_deleted",
+    "memory_cards": "user_managed",
+    "sensitivity_tiers": [
+      "Public",
+      "Personal",
+      "Confidential",
+      "Restricted"
+    ],
+    "restricted_tier_enforced": false,
+    "acl_enforcement": "n/a (single user)",
+    "collections": [
+      "personal"
+    ],
+    "regulated_categories": [],
+    "connectors": "none",
+    "web_research": "on",
+    "cloud_burst": "off",
+    "compliance_note": null
+  },
+  "cloud_burst": {
+    "enabled": false
+  },
+  "warnings": [
+    "Offline operation is required: web research works only while a connection is available.",
+    "Assumption: Occasional code questions handled by general model.",
+    "Exact chip/GPU not given; speed assumes a conservative apple_m2.",
+    "Reading a typical 2,000-token prompt takes ~11.4s before the answer starts (prefill, estimate). Prompt-heavy work favors higher-compute GPUs."
+  ],
+  "estimates_note": "All memory, speed, disk and price figures are estimates, not benchmarks.",
+  "tco": {
+    "months": 36,
+    "options": {
+      "local": {
+        "label": "Local (this recommendation)",
+        "total_usd": 97,
+        "breakdown": {
+          "hardware": 0,
+          "power": 97,
+          "admin_time": 0,
+          "networking": 0
+        },
+        "hardware_note": "$0 new hardware (existing machine fits)"
+      },
+      "api_open": {
+        "label": "Hosted open-weight model API (e.g. Qwen3.6 35B-A3B via a router)",
+        "total_usd": 14
+      },
+      "api_frontier": {
+        "label": "Frontier model API (mid-tier frontier model)",
+        "total_usd": 428
+      },
+      "subscription": {
+        "label": "Flat-rate AI subscription (team plan, per user)",
+        "total_usd": 900,
+        "note": null
+      }
+    },
+    "local": {
+      "label": "Local (this recommendation)",
+      "total_usd": 97,
+      "breakdown": {
+        "hardware": 0,
+        "power": 97,
+        "admin_time": 0,
+        "networking": 0
+      },
+      "hardware_note": "$0 new hardware (existing machine fits)"
+    },
+    "cheapest": "api_open",
+    "local_is_cheapest": false,
+    "verdict": "On these estimates, a hosted open-weight model API would be cheaper than local by about $83 over three years. Local is recommended here for privacy, availability, security, not price.",
+    "token_volume": {
+      "queries": 31680.0,
+      "human_in": 63360000.0,
+      "human_out": 15840000.0,
+      "agent_in": 0,
+      "agent_out": 0
+    },
+    "stale_or_unverified_prices": [
+      "running costs",
+      "frontier API price",
+      "subscription price"
+    ],
+    "assumptions": [
+      "1 user(s) x 40 queries/day x 22 days/month",
+      "2,000 input + 500 output tokens per query",
+      "0 agent(s)",
+      "admin time at $0/hour (your own time is not priced); electricity $0.17/kWh",
+      "High-memory machines may hold resale value while memory prices are high; resale is not counted."
+    ]
+  },
+  "hardware_cost": "$0 new hardware (existing machine fits)",
+  "tokens": [
+    "audit_log",
+    "conversation_history",
+    "embeddings",
+    "encrypted_backups",
+    "general_chat_small",
+    "hybrid_search",
+    "model_pinning",
+    "ollama",
+    "reranker",
+    "searxng",
+    "tier_1"
+  ]
+}

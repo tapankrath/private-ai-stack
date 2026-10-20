@@ -1,0 +1,2 @@
+# Hugging Face repos (vLLM weights, reranker). Pin a revision before download.
+BAAI/bge-reranker-base   # reranker, used by the Gateway (Phase 2)

@@ -1,0 +1,6 @@
+# Pulled by `make pull` (the only step with internet access). Never add ':cloud' tags.
+# Qwen3 8B: pick the q5_K_M tag on the model's Ollama page
+qwen3:8b
+# Qwen2.5-VL 7B Instruct: default tag (Q4_K_M)
+qwen2.5vl:7b
+nomic-embed-text

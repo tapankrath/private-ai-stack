@@ -1,0 +1,4 @@
+# Pulled by `make pull` (the only step with internet access). Never add ':cloud' tags.
+# Qwen3 8B: default tag (Q4_K_M)
+qwen3:8b
+nomic-embed-text
