@@ -1,0 +1,179 @@
+# JSON Schema (draft 2020-12), written as YAML, for Right-Size Advisor profiles.
+# Enums follow Appendix A2 of the build prompt. Fields marked "extension" are optional
+# additions needed to evaluate rules the prompt describes (license triggers, runtime gates).
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "private-ai-stack/profile.schema.yaml"
+title: Right-Size Advisor profile
+type: object
+additionalProperties: false
+required: [schema_version, profile_id, org, users, jobs, data, sensitivity, usage, hardware, licensing]
+
+$defs:
+  customization_item:
+    type: object
+    additionalProperties: false
+    properties:
+      requested: {type: boolean, default: false}
+      justification: {type: string, default: ""}
+      admin_approved: {type: boolean, default: false}
+
+properties:
+  schema_version: {const: 1}
+  profile_id: {type: string, pattern: "^[a-z0-9][a-z0-9_-]*$"}
+  description: {type: string}
+
+  org:
+    type: object
+    additionalProperties: false
+    required: [type, technical_skill]
+    properties:
+      type: {enum: [individual, household, small_business, smb]}
+      name: {type: string}
+      technical_skill: {enum: [non_technical, power_user, it_admin]}
+      departments: {type: array, items: {type: string}}            # extension
+
+  users:
+    type: object
+    additionalProperties: false
+    required: [count, peak_concurrent]
+    properties:
+      count: {type: integer, minimum: 1, maximum: 250}
+      peak_concurrent: {type: integer, minimum: 1}
+
+  jobs:
+    type: array
+    minItems: 1
+    uniqueItems: true
+    items:
+      enum: [general_qa, writing, research, knowledge_recall, conversation_recall, drafting, coding,
+             data_analysis, scanned_docs, image_understanding, transcription, translation, agent_tasks]
+
+  data:
+    type: object
+    additionalProperties: false
+    properties:
+      types:
+        type: array
+        uniqueItems: true
+        items: {enum: [text, pdf, scans, images, audio, code, spreadsheets, email_exports]}
+      volume_gb: {type: number, minimum: 0}
+      document_count: {type: integer, minimum: 0}
+      growth_gb_per_month: {type: number, minimum: 0}
+      languages: {type: array, items: {type: string}, minItems: 1}
+
+  sensitivity:
+    type: object
+    additionalProperties: false
+    required: [level]
+    properties:
+      level: {enum: [low, moderate, high, regulated]}
+      regulated_data:
+        type: array
+        uniqueItems: true
+        items: {enum: [health, financial, legal, children, client_confidential]}
+      air_gapped: {type: boolean}
+      data_residency: {enum: [local_device, local_network, on_prem_datacenter]}
+
+  usage:
+    type: object
+    additionalProperties: false
+    properties:
+      queries_per_user_per_day: {type: number, minimum: 0}
+      latency: {enum: [instant, few_seconds, batch_ok]}
+      offline_required: {type: boolean}
+      context_needs: {enum: [standard, long, very_long]}
+
+  hardware:
+    type: object
+    additionalProperties: false
+    properties:
+      autodetect: {type: boolean}
+      override:
+        type: object
+        additionalProperties: false
+        properties:
+          platform: {enum: [apple_silicon, mac_intel, linux_x86, windows_x86, linux_arm, nvidia_dgx_spark, amd_ryzen_ai_max]}
+          ram_gb: {type: number, exclusiveMinimum: 0}
+          gpu: {enum: [none, integrated, nvidia, amd]}
+          vram_gb: {type: number, minimum: 0}
+          gpu_count: {type: integer, minimum: 1}
+          free_disk_gb: {type: number, minimum: 0}
+          chip: {type: string}              # e.g. apple_m4_pro (extension)
+          gpu_model: {type: string}         # e.g. rtx_4090 (extension)
+          bandwidth_gbps: {type: number}    # extension
+          tflops_fp16: {type: number}       # extension
+      budget_usd: {enum: [none, lt_1500, lt_5000, lt_10000, lt_20000, lt_150000, gt_150000]}
+      deployment_preference: {enum: [same_machine, home_server, on_prem_cluster]}
+
+  features:
+    type: object
+    additionalProperties: false
+    properties:
+      web_research: {type: boolean}
+      connectors: {type: array, items: {type: string}}
+      cloud_burst: {type: boolean}
+      sso: {type: boolean}
+
+  retention:
+    type: object
+    additionalProperties: false
+    properties:
+      conversations_days: {type: integer, minimum: 1}
+      documents: {enum: [keep_until_deleted, days_30, days_90, days_365]}
+      memory_cards: {enum: [user_managed, admin_and_user_managed]}
+
+  workload:
+    type: object
+    additionalProperties: false
+    properties:
+      shape: {enum: [prompt_heavy, generation_heavy, balanced]}
+      agents:
+        type: object
+        additionalProperties: false
+        properties:
+          count: {type: integer, minimum: 0}
+          always_on: {type: boolean}
+
+  customization:
+    type: object
+    additionalProperties: false
+    properties:
+      post_training: {$ref: "#/$defs/customization_item"}
+      distillation: {$ref: "#/$defs/customization_item"}
+      abliteration: {$ref: "#/$defs/customization_item"}
+
+  blockers:
+    type: array
+    uniqueItems: true
+    items: {enum: [cost, expertise, security_review, where_to_begin]}
+
+  priorities:
+    type: array
+    uniqueItems: true
+    items: {enum: [privacy, security, availability, customization, cost]}
+
+  licensing:
+    type: object
+    additionalProperties: false
+    required: [use]
+    properties:
+      use: {enum: [personal, commercial]}
+      scale:                                   # extension: evaluates commercial_triggers
+        type: object
+        additionalProperties: false
+        properties:
+          monthly_active_users: {type: integer, minimum: 0}
+          monthly_revenue_usd: {type: number, minimum: 0}
+          offers_model_as_service: {type: boolean}
+      acknowledged_triggers: {type: array, items: {type: string}}   # extension
+
+  runtime_preferences:                         # extension (A9 runtime gates)
+    type: object
+    additionalProperties: false
+    properties:
+      preferred: {type: string}
+      allow_experimental: {type: boolean}
+      accept_closed_source: {type: boolean}
+
+  assumptions: {type: array, items: {type: string}}
+  expected: {type: object}                     # used ONLY by tests; ignored by the engine

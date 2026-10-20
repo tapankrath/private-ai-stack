@@ -1,0 +1,401 @@
+<title>Right-Size Advisor</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Size a private, local AI setup: which models, runtime and hardware fit your needs, and what it costs over three years. Runs entirely in your browser.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;700&family=Public+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a spec-sheet workbench. Inputs on the left as a settings rail, the fitted plan on the right as a datasheet. */
+:root {
+  --bg: #f3f5f6; --panel: #ffffff; --ink: #14202a; --muted: #5b6b77; --line: #d6dde2;
+  --accent: #0b6a73; --accent-soft: #dcefef; --warn: #9a5b00; --warn-soft: #fbefd9; --bad: #a3282e; --good: #2f7a3c;
+  --bar: #b9c7cf;
+  --f-display: "Familjen Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --f-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f161b; --panel: #172128; --ink: #e3eaee; --muted: #93a4af; --line: #2a3943;
+  --accent: #4fc0c6; --accent-soft: #163a3d; --warn: #f0b45a; --warn-soft: #3a2b12; --bad: #f08a8e; --good: #7fcf8b; --bar: #3b4f5b; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0f161b; --panel: #172128; --ink: #e3eaee; --muted: #93a4af; --line: #2a3943;
+  --accent: #4fc0c6; --accent-soft: #163a3d; --warn: #f0b45a; --warn-soft: #3a2b12; --bad: #f08a8e; --good: #7fcf8b; --bar: #3b4f5b; color-scheme: dark }
+
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font: 15px/1.55 var(--f-body); }
+.wrap { max-width: 1240px; margin: 0 auto; padding-block: 28px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+header.top { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 24px; border-bottom: 2px solid var(--ink); padding-bottom: 14px; margin-bottom: 22px; }
+h1 { font: 700 clamp(28px, 4vw, 40px)/1.05 var(--f-display); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+.tag { font: 500 12px/1.4 var(--f-mono); color: var(--muted); max-width: 46ch; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; align-items: center; }
+.presets span { font: 500 11px var(--f-mono); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-right: 4px; }
+button, .chip { font: inherit; cursor: pointer; }
+.preset { border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 999px; padding: 5px 12px; font-size: 13px; }
+.preset[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.grid { display: grid; grid-template-columns: minmax(0, 360px) minmax(0, 1fr); gap: 28px; align-items: start; }
+@media (max-width: 560px) { .specs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 880px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+
+form { display: grid; gap: 18px; }
+fieldset { border: 0; border-top: 1px solid var(--line); padding: 12px 0 0; margin: 0; display: grid; gap: 10px; min-width: 0; }
+legend { font: 700 13px var(--f-display); text-transform: uppercase; letter-spacing: .08em; padding: 0 8px 0 0; }
+label.f { display: grid; gap: 3px; font-size: 13px; color: var(--muted); }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+input[type=number], select { width: 100%; font: 14px var(--f-body); color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 7px 8px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { position: relative; }
+.chip input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.chip span { display: inline-block; border: 1px solid var(--line); background: var(--panel); border-radius: 5px; padding: 3px 9px; font-size: 13px; color: var(--ink); }
+.chip input:checked + span { background: var(--accent-soft); border-color: var(--accent); color: var(--ink); }
+.chip input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 1px; }
+.check { display: flex; gap: 8px; align-items: center; font-size: 14px; }
+.hint { font-size: 12px; color: var(--muted); margin: 0; }
+
+.sheet > * { min-width: 0 }
+.sheet { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 22px clamp(16px, 3vw, 28px); display: grid; gap: 26px; min-width: 0; }
+.eyebrow { font: 500 11px var(--f-mono); text-transform: uppercase; letter-spacing: .1em; color: var(--accent); margin: 0 0 4px; }
+h2 { font: 700 24px/1.15 var(--f-display); margin: 0; text-wrap: balance; }
+h3 { font: 700 15px var(--f-display); text-transform: uppercase; letter-spacing: .06em; margin: 0 0 10px; }
+.specs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.spec { background: var(--panel); padding: 10px 12px; min-width: 0; }
+.spec dt { font: 500 11px var(--f-mono); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.spec dd { margin: 2px 0 0; font: 600 17px/1.3 var(--f-body); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.spec dd small { display: block; font: 400 12px var(--f-body); color: var(--muted); }
+.mem { display: grid; gap: 6px; }
+.membar { height: 14px; border-radius: 3px; background: var(--bg); border: 1px solid var(--line); display: flex; overflow: hidden; }
+.membar i { display: block; height: 100%; border-right: 1px solid var(--panel); }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font: 12px var(--f-mono); color: var(--muted); }
+.legend b { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+.buy { border: 1px solid var(--accent); background: var(--accent-soft); border-radius: 8px; padding: 14px 16px; display: grid; gap: 4px; }
+.buy strong { font: 700 18px var(--f-display); }
+.tbl { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { text-align: left; font: 500 11px var(--f-mono); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); border-bottom: 1px solid var(--ink); padding: 6px 8px 6px 0; white-space: nowrap; }
+td { border-bottom: 1px solid var(--line); padding: 8px 8px 8px 0; vertical-align: top; }
+td.n { font-variant-numeric: tabular-nums; font-family: var(--f-mono); font-size: 13px; white-space: nowrap; }
+.role { font: 500 11px var(--f-mono); text-transform: uppercase; color: var(--muted); }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 22px; }
+ul.comp { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+ul.comp li { display: grid; gap: 1px; padding-left: 14px; position: relative; font-size: 14px; }
+ul.comp li::before { content: ""; position: absolute; left: 0; top: .55em; width: 7px; height: 7px; border-radius: 50%; background: var(--good); }
+ul.comp.out li::before { background: transparent; border: 1.5px solid var(--muted); }
+ul.comp small { color: var(--muted); font-size: 12.5px; }
+.tco { display: grid; gap: 10px; }
+.tco-row { display: grid; grid-template-columns: minmax(0, 170px) minmax(0, 1fr) 90px; gap: 10px; align-items: center; font-size: 13px; }
+.tco-row .track { height: 16px; background: var(--bg); border-radius: 3px; overflow: hidden; }
+.tco-row .fill { height: 100%; background: var(--bar); border-radius: 3px; }
+.tco-row.local .fill { background: var(--accent); }
+.tco-row .amt { font: 500 13px var(--f-mono); text-align: right; font-variant-numeric: tabular-nums; }
+@media (max-width: 520px) { .tco-row { grid-template-columns: minmax(0, 1fr) 80px; } .tco-row .track { grid-column: 1 / -1; grid-row: 2; } }
+.verdict { font-size: 14px; margin: 4px 0 0; max-width: 70ch; }
+.notes { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.notes li { background: var(--warn-soft); border-left: 3px solid var(--warn); padding: 7px 10px; font-size: 13.5px; border-radius: 0 4px 4px 0; }
+.err { color: var(--bad); font-weight: 600; }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.btn { border: 1px solid var(--ink); background: var(--ink); color: var(--bg); border-radius: 6px; padding: 7px 14px; font-size: 13px; }
+.btn.ghost { background: transparent; color: var(--ink); }
+#copied { font: 12px var(--f-mono); color: var(--good); }
+textarea#yaml { width: 100%; min-height: 160px; font: 12px var(--f-mono); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 8px; }
+footer { margin-top: 28px; font-size: 12.5px; color: var(--muted); max-width: 80ch; display: grid; gap: 6px; }
+footer a { color: var(--accent); }
+@media (prefers-reduced-motion: no-preference) { .fill, .membar i { transition: width .35s ease; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1>Right-Size Advisor</h1>
+    <p class="tag">Size a private AI setup that runs on your own hardware. Calculated in this browser; nothing you enter is sent anywhere.</p>
+  </header>
+
+  <div class="presets" id="presets"><span>Start from</span></div>
+
+  <div class="grid">
+    <form id="f" autocomplete="off">
+      <fieldset>
+        <legend>Who</legend>
+        <div class="row">
+          <label class="f">Organization<select id="org_type">
+            <option value="individual">Individual</option><option value="household">Household</option>
+            <option value="small_business">Small business</option><option value="smb">Mid-size business</option></select></label>
+          <label class="f">Technical skill<select id="skill">
+            <option value="non_technical">Non-technical</option><option value="power_user">Power user</option><option value="it_admin">IT admin</option></select></label>
+        </div>
+        <div class="row">
+          <label class="f">People<input id="users" type="number" min="1" max="5000" step="1"></label>
+          <label class="f">Using it at once<input id="peak" type="number" min="1" max="5000" step="1"></label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Jobs</legend>
+        <div class="chips" id="jobs"></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Your data</legend>
+        <div class="chips" id="dtypes"></div>
+        <div class="row">
+          <label class="f">Volume (GB)<input id="volume" type="number" min="0" step="0.5"></label>
+          <label class="f">Questions / person / day<input id="qpd" type="number" min="1" step="1"></label>
+        </div>
+        <div class="row">
+          <label class="f">Sensitivity<select id="sens">
+            <option value="low">Low</option><option value="moderate">Moderate</option><option value="high">High</option><option value="regulated">Regulated</option></select></label>
+          <label class="f">Answer speed<select id="latency">
+            <option value="instant">Instant</option><option value="few_seconds">A few seconds</option><option value="batch_ok">Batch is fine</option></select></label>
+        </div>
+        <label class="f">Regulated data</label>
+        <div class="chips" id="regulated"></div>
+        <div class="row">
+          <label class="f">Context needed<select id="ctx">
+            <option value="standard">Standard (8K)</option><option value="long">Long documents</option><option value="very_long">Very long</option></select></label>
+          <label class="f">Workload shape<select id="shape">
+            <option value="balanced">Balanced</option><option value="prompt_heavy">Long prompts, short answers</option><option value="generation_heavy">Short prompts, long answers</option></select></label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Hardware</legend>
+        <label class="f">What you have<select id="platform">
+          <option value="">Nothing yet: tell me what to buy</option>
+          <option value="apple">Mac with Apple Silicon</option>
+          <option value="nvidia">PC with NVIDIA GPU</option>
+          <option value="amd">PC with AMD GPU</option>
+          <option value="spark">NVIDIA DGX Spark</option>
+          <option value="ryzen">AMD Ryzen AI Max</option>
+          <option value="cpu">PC without a GPU</option></select></label>
+        <div id="hwfields" class="row">
+          <label class="f" id="chipwrap">Chip / GPU<select id="chip"></select></label>
+          <label class="f">System RAM (GB)<input id="ram" type="number" min="4" step="1"></label>
+          <label class="f" id="vramwrap">GPU memory per card × cards (GB)<input id="vram" type="number" min="0" step="1"></label>
+          <label class="f" id="countwrap">GPU count<input id="gpus" type="number" min="1" max="8" step="1"></label>
+        </div>
+        <label class="f">Budget for new hardware<select id="budget">
+          <option value="none">No budget set</option><option value="lt_1500">Under $1,500</option><option value="lt_5000">Under $5,000</option>
+          <option value="lt_10000">Under $10,000</option><option value="lt_20000">Under $20,000</option><option value="lt_150000">Under $150,000</option></select></label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Options</legend>
+        <label class="check"><input type="checkbox" id="web"> Private web research</label>
+        <label class="check"><input type="checkbox" id="airgap"> Air-gapped (no network at all)</label>
+        <label class="check"><input type="checkbox" id="sso"> Single sign-on with MFA</label>
+        <label class="check"><input type="checkbox" id="commercial"> Commercial use (check model licenses)</label>
+        <div class="row">
+          <label class="f">AI agents<input id="agents" type="number" min="0" max="50" step="1"></label>
+          <label class="check" style="align-self:end"><input type="checkbox" id="always"> Always on</label>
+        </div>
+      </fieldset>
+    </form>
+
+    <section class="sheet" id="out" aria-live="polite"></section>
+  </div>
+
+  <footer>
+    <p>Every memory, speed, disk and price figure is an estimate from a published catalog, not a benchmark. Prices were last checked on the dates in the catalog. Model licenses change; read each model's terms before commercial use.</p>
+    <p>This is the in-browser version of the advisor in <a href="https://github.com/tapankrath/private-ai-stack" target="_blank" rel="noopener">private-ai-stack</a>. The command-line version also writes the docker-compose file, settings and a written explanation for your plan.</p>
+  </footer>
+</div>
+
+<script src="advisor-data.js"></script>
+<script src="advisor-engine.js"></script>
+<script>
+(function () {
+  "use strict";
+  const D = globalThis.ADVISOR_DATA, E = AdvisorEngine.Engine(D);
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const usd = (n) => "$" + Math.round(n).toLocaleString("en-US");
+  const gb = (n) => (Math.round(n * 10) / 10).toLocaleString("en-US") + " GB";
+  const nice = (s) => String(s).replace(/_/g, " ");
+
+  const JOBS = { general_qa: "Questions", writing: "Writing", research: "Research", knowledge_recall: "Search my documents", conversation_recall: "Search past chats", drafting: "Drafting", coding: "Coding", data_analysis: "Data analysis", scanned_docs: "Scanned documents", image_understanding: "Photos and charts", transcription: "Transcription", translation: "Translation", agent_tasks: "Agent tasks" };
+  const DTYPES = { text: "Text", pdf: "PDF", scans: "Scans", images: "Images", audio: "Audio", code: "Code", spreadsheets: "Spreadsheets", email_exports: "Email exports" };
+  const REG = { health: "Health", financial: "Financial", legal: "Legal", children: "Children's", client_confidential: "Client confidential" };
+  const ENGINE_LABEL = { ollama: "Ollama", vllm: "vLLM", llama_cpp: "llama.cpp", mlx: "MLX" };
+
+  function chips(el, map, name) { el.innerHTML = Object.entries(map).map(([k, v]) => `<label class="chip"><input type="checkbox" name="${name}" value="${k}" id="${name}-${k}"><span>${esc(v)}</span></label>`).join(""); }
+  chips($("jobs"), JOBS, "job"); chips($("dtypes"), DTYPES, "dt"); chips($("regulated"), REG, "rg");
+  const checked = (name) => Array.from(document.querySelectorAll(`input[name=${name}]:checked`)).map((i) => i.value);
+  const setChecked = (name, vals) => document.querySelectorAll(`input[name=${name}]`).forEach((i) => { i.checked = vals.includes(i.value); });
+
+  // chip / GPU choices per platform, from the hardware reference
+  const keys = Object.keys(D.hardware.bandwidth_gbps);
+  const CHIPS = {
+    apple: keys.filter((k) => k.startsWith("apple_")),
+    nvidia: keys.filter((k) => /^(rtx|l40|a100|h100)/.test(k)),
+    amd: [], spark: [], ryzen: [], cpu: [],
+  };
+  const chipLabel = (k) => k.replace(/^apple_/, "Apple ").replace(/^rtx_a/, "RTX A").replace(/^rtx_/, "RTX ").replace(/_/g, " ").replace(/\b(m\d)\b/g, (m) => m.toUpperCase()).replace(/\bti\b/, "Ti").replace(/\b(pro|max|ultra|ada)\b/g, (m) => m[0].toUpperCase() + m.slice(1)).replace(/^(l40s|a100 80gb|h100 pcie)$/, (m) => m.toUpperCase());
+
+  function syncHw() {
+    const p = $("platform").value, list = CHIPS[p] || [];
+    $("hwfields").hidden = !p;
+    $("chipwrap").hidden = !list.length;
+    const gpu = p === "nvidia" || p === "amd";
+    $("vramwrap").hidden = !gpu; $("countwrap").hidden = !gpu;
+    const cur = $("chip").value;
+    $("chip").innerHTML = `<option value="">Not sure</option>` + list.map((k) => `<option value="${k}">${esc(chipLabel(k))}</option>`).join("");
+    if (list.includes(cur)) $("chip").value = cur;
+  }
+
+  // ---- profile <-> form
+  let base = null, presetId = null;
+  function toForm(raw) {
+    base = JSON.parse(JSON.stringify(raw));
+    const o = raw.org, u = raw.usage || {}, d = raw.data || {}, s = raw.sensitivity || {}, f = raw.features || {}, w = raw.workload || {}, hw = (raw.hardware || {}).override || {};
+    $("org_type").value = o.type; $("skill").value = o.technical_skill;
+    $("users").value = raw.users.count; $("peak").value = raw.users.peak_concurrent;
+    setChecked("job", raw.jobs); setChecked("dt", d.types || []); setChecked("rg", s.regulated_data || []);
+    $("volume").value = d.volume_gb || 0; $("qpd").value = u.queries_per_user_per_day == null ? 20 : u.queries_per_user_per_day;
+    $("sens").value = s.level; $("latency").value = u.latency || "few_seconds"; $("ctx").value = u.context_needs || "standard"; $("shape").value = w.shape || "balanced";
+    let plat = "";
+    if (hw.platform === "apple_silicon") plat = "apple";
+    else if (hw.platform === "nvidia_dgx_spark") plat = "spark";
+    else if (hw.platform === "amd_ryzen_ai_max") plat = "ryzen";
+    else if (hw.platform) plat = hw.gpu === "nvidia" ? "nvidia" : hw.gpu === "amd" ? "amd" : "cpu";
+    $("platform").value = plat; syncHw();
+    $("chip").value = hw.chip || hw.gpu_model || "";
+    $("ram").value = hw.ram_gb || 32; $("vram").value = hw.vram_gb || 24; $("gpus").value = hw.gpu_count || 1;
+    $("budget").value = (raw.hardware || {}).budget_usd || "none";
+    $("web").checked = !!f.web_research; $("airgap").checked = !!s.air_gapped; $("sso").checked = !!f.sso;
+    $("commercial").checked = (raw.licensing || {}).use === "commercial";
+    $("agents").value = ((w.agents || {}).count) || 0; $("always").checked = !!((w.agents || {}).always_on);
+  }
+  const num = (id, d, min) => { const v = parseFloat($(id).value); return Number.isFinite(v) ? Math.max(v, min == null ? 0 : min) : d; };
+  function fromForm() {
+    const r = JSON.parse(JSON.stringify(base));
+    r.profile_id = presetId ? presetId + "-custom" : "my-profile";
+    r.org = Object.assign({}, r.org, { type: $("org_type").value, technical_skill: $("skill").value });
+    const users = Math.round(num("users", 1, 1));
+    r.users = { count: users, peak_concurrent: Math.min(Math.round(num("peak", 1, 1)), users) };
+    r.jobs = checked("job"); if (!r.jobs.length) r.jobs = ["general_qa"];
+    r.data = Object.assign({}, r.data, { types: checked("dt"), volume_gb: num("volume", 0) });
+    r.sensitivity = Object.assign({}, r.sensitivity, { level: $("sens").value, regulated_data: checked("rg"), air_gapped: $("airgap").checked });
+    r.usage = Object.assign({}, r.usage, { latency: $("latency").value, context_needs: $("ctx").value, queries_per_user_per_day: Math.round(num("qpd", 20, 1)) });
+    r.workload = Object.assign({}, r.workload, { shape: $("shape").value, agents: { count: Math.round(num("agents", 0)), always_on: $("always").checked } });
+    r.features = Object.assign({}, r.features, { web_research: $("web").checked, sso: $("sso").checked });
+    r.licensing = $("commercial").checked ? Object.assign({ scale: {} }, r.licensing, { use: "commercial" }) : { use: "personal" };
+    const p = $("platform").value, chip = $("chip").value || undefined, ram = num("ram", 32, 4);
+    let ov = null;
+    if (p === "apple") ov = { platform: "apple_silicon", gpu: "integrated", ram_gb: ram, vram_gb: 0, chip };
+    else if (p === "nvidia") ov = { platform: "linux_x86", gpu: "nvidia", ram_gb: ram, vram_gb: num("vram", 24, 1) * Math.round(num("gpus", 1, 1)), gpu_count: Math.round(num("gpus", 1, 1)), gpu_model: chip };
+    else if (p === "amd") ov = { platform: "linux_x86", gpu: "amd", ram_gb: ram, vram_gb: num("vram", 24, 1) * Math.round(num("gpus", 1, 1)), gpu_count: Math.round(num("gpus", 1, 1)) };
+    else if (p === "spark") ov = { platform: "nvidia_dgx_spark", gpu: "nvidia", ram_gb: ram };
+    else if (p === "ryzen") ov = { platform: "amd_ryzen_ai_max", gpu: "integrated", ram_gb: ram };
+    else if (p === "cpu") ov = { platform: "linux_x86", gpu: "none", ram_gb: ram };
+    if (ov) Object.keys(ov).forEach((k) => ov[k] === undefined && delete ov[k]);
+    r.hardware = Object.assign({}, r.hardware, { budget_usd: $("budget").value });
+    if (ov) r.hardware.override = ov; else delete r.hardware.override;
+    return r;
+  }
+  // nvidia vram field shows per-card value
+  const _toForm = toForm;
+  toForm = function (raw) { _toForm(raw); const hw = (raw.hardware || {}).override || {}; if (hw.vram_gb && hw.gpu_count > 1) $("vram").value = hw.vram_gb / hw.gpu_count; };
+
+  // ---- rendering
+  const ROLE_COLOR = { general: "var(--accent)", code: "var(--good)", vision: "var(--warn)", embeddings: "var(--bar)", reranker: "var(--bar)", stt: "var(--muted)", fast_small: "var(--muted)" };
+  function modelRows(plan) {
+    const rows = [];
+    const add = (m, role) => {
+      const mem = m.memory ? m.memory.total_gb : m.memory_gb;
+      const speed = m.tokens_per_sec_est != null ? `${m.tokens_per_sec_est} tok/s` : "";
+      const detail = m.quant ? `${m.quant}${m.context_tokens ? " · " + (m.context_tokens / 1024) + "K context" : ""}` : "";
+      rows.push(`<tr><td><span class="role">${esc(nice(role))}</span><br>${esc(m.name)}${m.note ? `<br><small class="hint">${esc(m.note)}</small>` : ""}</td><td class="n">${esc(detail)}</td><td class="n">${mem != null ? gb(mem) : ""}</td><td class="n">${speed}</td><td>${esc(m.license || "")}</td></tr>`);
+    };
+    if (plan.general) add(plan.general, "general");
+    plan.specialists.forEach((m) => add(m, m.role)); plan.aux.forEach((m) => add(m, m.role));
+    return rows.join("");
+  }
+  function memBar(plan) {
+    const parts = [];
+    const push = (m, role) => parts.push({ role, name: m.name, gb: m.memory ? m.memory.total_gb : m.memory_gb, resident: m.resident !== false });
+    if (plan.general) push(plan.general, "general");
+    plan.specialists.forEach((m) => push(m, m.role)); plan.aux.forEach((m) => push(m, m.role));
+    const res = parts.filter((p) => p.resident), total = plan.usable_memory_gb || 1;
+    return `<div class="mem"><div class="membar" role="img" aria-label="${plan.memory_use_pct}% of usable memory planned">${res.map((p) => `<i style="width:${Math.min(100, 100 * p.gb / total)}%;background:${ROLE_COLOR[p.role] || "var(--bar)"}" title="${esc(p.name)} ${gb(p.gb)}"></i>`).join("")}</div>
+      <div class="legend">${res.map((p) => `<span><b style="background:${ROLE_COLOR[p.role] || "var(--bar)"}"></b>${esc(nice(p.role))} ${gb(p.gb)}</span>`).join("")}<span>of ${gb(total)} usable</span></div>
+      <p class="hint">${esc(plan.usable_memory_basis)}</p></div>`;
+  }
+  function tcoBlock(t) {
+    const opts = Object.entries(t.options), max = Math.max(...opts.map(([, o]) => o.total_usd), 1);
+    return `<div class="tco">${opts.map(([k, o]) => `<div class="tco-row ${k === "local" ? "local" : ""}"><span>${esc(o.label)}</span><div class="track"><div class="fill" style="width:${Math.max(1, 100 * o.total_usd / max)}%"></div></div><span class="amt">${usd(o.total_usd)}</span></div>`).join("")}</div>
+      <p class="hint">Local: ${esc(t.local.hardware_note)}; power ${usd(t.local.breakdown.power)}; ${t.admin_rate ? `admin time ${usd(t.local.breakdown.admin_time)} at $${t.admin_rate}/h` : "your own admin time is not costed"}.${t.options.subscription.note ? " Subscription " + esc(t.options.subscription.note) + "." : ""}</p>
+      <p class="verdict">${esc(t.verdict)}</p>`;
+  }
+
+  function render() {
+    let raw, rec;
+    try { raw = fromForm(); rec = E.recommend(raw); }
+    catch (e) { $("out").innerHTML = `<p class="err">This combination could not be sized: ${esc(e.message)}. Try a different hardware choice.</p>`; return; }
+    lastRaw = raw;
+    const plan = rec.plan, g = plan.general, pr = rec.procurement;
+    const headline = g ? `${g.name} on ${ENGINE_LABEL[plan.runtime] || plan.runtime_name}` : "No model fits this hardware";
+    const specs = [
+      ["Tier", `${rec.tier}`, rec.tier_name],
+      ["Runtime", plan.runtime_name, plan.runtime_mode === "native" ? "installed natively" : "in a container"],
+      ["General model", g ? `${g.total_params_b}B ${g.quant}` : "none", g ? (g.architecture === "moe" ? `MoE, ${g.active_params_b}B active` : "dense") : ""],
+      ["Speed", g && g.tokens_per_sec_est != null ? `~${g.tokens_per_sec_est} tok/s` : "unknown", `target ${plan.tokens_per_sec_target} tok/s`],
+      ["Context", g ? `${(g.context_tokens / 1024)}K tokens` : "", g && g.kv_cache_type !== "f16" ? "KV cache q8_0" : ""],
+      ["First token", plan.ttft_s_est != null ? `~${plan.ttft_s_est} s` : "unknown", "typical prompt"],
+      ["Memory planned", plan.memory_use_pct != null ? `${plan.memory_use_pct}%` : "", `${gb(plan.memory_used_gb)} of ${gb(plan.usable_memory_gb)}`],
+      ["Disk", gb(rec.disk_estimate_gb), "incl. a year of growth"],
+      ["Setup effort", rec.setup_effort, ""],
+    ];
+    let buy = "";
+    if (pr) buy = `<div class="buy"><span class="eyebrow">What to buy</span><strong>${esc(pr.name)}</strong><span>${usd(pr.price_usd[0])} to ${usd(pr.price_usd[1])} (estimate${pr.last_verified ? ", checked " + esc(pr.last_verified) : ""})</span></div>`;
+    if (rec.upgrades_required) buy = `<div class="buy"><span class="eyebrow">Your hardware is too small for this tier</span>${rec.upgrade_options.length ? rec.upgrade_options.map((o) => `<span><strong style="font-size:15px">${esc(o.name)}</strong> · ${usd(o.price_usd[0])} to ${usd(o.price_usd[1])} · runs ${esc(o.general_model)}</span>`).join("") : "<span>No listed workstation fits.</span>"}</div>`;
+    const gbb = rec.good_better_best.length ? `<div><h3>Spend more, get a stronger model</h3><div class="tbl"><table><thead><tr><th>Hardware</th><th>Price</th><th>Model</th><th>Speed</th></tr></thead><tbody>${rec.good_better_best.map((o) => `<tr><td>${esc(o.name)}</td><td class="n">${usd(o.price_usd[0])}–${usd(o.price_usd[1])}</td><td>${esc(o.general_model)}</td><td class="n">${o.tokens_per_sec_est != null ? o.tokens_per_sec_est + " tok/s" : ""}</td></tr>`).join("")}</tbody></table></div></div>` : "";
+    const lic = rec.licenses.filter((l) => l.triggers.length || !l.osi_open_source);
+    $("out").innerHTML = `
+      <div><p class="eyebrow">${esc(rec.tier_name)}</p><h2>${esc(headline)}</h2></div>
+      <dl class="specs" style="margin:0">${specs.map(([k, v, s]) => `<div class="spec"><dt>${esc(k)}</dt><dd>${esc(v)}${s ? `<small>${esc(s)}</small>` : ""}</dd></div>`).join("")}</dl>
+      ${buy}
+      <div><h3>Memory</h3>${memBar(plan)}</div>
+      <div><h3>Models</h3><div class="tbl"><table><thead><tr><th>Model</th><th>Quant · context</th><th>Memory</th><th>Speed</th><th>License</th></tr></thead><tbody>${modelRows(plan)}</tbody></table></div></div>
+      ${gbb}
+      <div class="two">
+        <div><h3>Included</h3><ul class="comp">${rec.components.included.map((c) => `<li><span>${esc(c.name)}</span><small>${esc(c.reason)}</small></li>`).join("")}</ul></div>
+        <div><h3>Left out, and why</h3><ul class="comp out">${rec.components.excluded.concat(rec.excluded_models).map((c) => `<li><span>${esc(c.name)}</span><small>${esc(c.reason)}</small></li>`).join("")}</ul></div>
+      </div>
+      <div><h3>Three-year cost</h3>${tcoBlock(rec.tco)}</div>
+      <div><h3>Why local</h3><ul class="comp">${rec.why_local.map((w) => `<li><span>${esc(nice(w.benefit)[0].toUpperCase() + nice(w.benefit).slice(1))}</span><small>${esc(w.text)}</small></li>`).join("")}</ul></div>
+      ${lic.length ? `<div><h3>License notes</h3><ul class="comp out">${lic.map((l) => `<li><span>${esc(l.model)} · ${esc(l.license)}</span><small>${esc([l.osi_open_source ? "" : "Open weights, not OSI open source.", ...l.triggers.map((t) => `${t.effect} (${t.status})`)].filter(Boolean).join(" "))}</small></li>`).join("")}</ul></div>` : ""}
+      ${rec.warnings.length ? `<div><h3>Notes</h3><ul class="notes">${rec.warnings.map((w) => `<li>${esc(w)}</li>`).join("")}</ul></div>` : ""}
+      <div><h3>Take it further</h3>
+        <p class="hint" style="margin-bottom:8px">Save this as a profile file and run <code>advisor recommend profile.yaml --render out/</code> to get the docker-compose file and settings. The profile is JSON, which YAML reads as-is.</p>
+        <div class="actions"><button type="button" class="btn" id="copy">Copy profile</button><button type="button" class="btn ghost" id="show">Show profile</button><span id="copied"></span></div>
+        <textarea id="yaml" readonly hidden aria-label="Profile"></textarea>
+      </div>`;
+    $("copy").onclick = () => {
+      const txt = JSON.stringify(lastRaw, null, 2);
+      $("yaml").value = txt;
+      const fallback = () => { $("yaml").hidden = false; $("yaml").select(); $("copied").textContent = "Selected. Press Ctrl+C or ⌘C to copy."; };
+      try { navigator.clipboard.writeText(txt).then(() => { $("copied").textContent = "Copied."; }, fallback); } catch (e) { fallback(); }
+    };
+    $("show").onclick = () => { $("yaml").value = JSON.stringify(lastRaw, null, 2); $("yaml").hidden = !$("yaml").hidden; };
+  }
+  let lastRaw = null;
+
+  // ---- presets
+  const LABELS = { "solo-researcher-16gb": "Solo researcher, 16 GB Mac", "household-photos-docs": "Household", "law-accounting-office-10": "Law / accounting office", "software-team-8": "Software team of 8", "smb-50-sales-ops": "50-person business" };
+  const order = ["solo-researcher-16gb", "household-photos-docs", "software-team-8", "law-accounting-office-10", "smb-50-sales-ops"].filter((k) => D.profiles[k]).concat(Object.keys(D.profiles).filter((k) => !LABELS[k]));
+  $("presets").insertAdjacentHTML("beforeend", order.map((k) => `<button type="button" class="preset" data-id="${k}" aria-pressed="false">${esc(LABELS[k] || k)}</button>`).join(""));
+  function pick(id) {
+    presetId = id; toForm(D.profiles[id]);
+    document.querySelectorAll(".preset").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.id === id)));
+    try { localStorage.setItem("rsa-preset", id); } catch (e) {}
+    render();
+  }
+  $("presets").addEventListener("click", (e) => { const b = e.target.closest(".preset"); if (b) pick(b.dataset.id); });
+  $("f").addEventListener("submit", (e) => e.preventDefault());
+  $("f").addEventListener("input", (e) => { if (e.target.id === "platform") syncHw(); render(); });
+  $("f").addEventListener("change", (e) => { if (e.target.id === "platform") { syncHw(); render(); } });
+
+  let start = order[0];
+  try { const s = localStorage.getItem("rsa-preset"); if (s && D.profiles[s]) start = s; } catch (e) {}
+  pick(start);
+})();
+</script>
