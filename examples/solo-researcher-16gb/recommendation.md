@@ -18,7 +18,7 @@ One small general AI model on your computer handles your questions and writing; 
 | Ollama (installed natively on macOS) | Ollama for easy model management; MLX is the faster option for power users. | ollama-native | Default. Alternatives: MLX (mlx-lm server), llama.cpp server. |
 | Open WebUI | Chat UI bound to localhost/LAN, telemetry disabled. | open-webui | Default. Alternatives: AnythingLLM, custom thin UI on the Gateway. |
 | Caddy reverse proxy | Caddy (only container with a published port; local CA TLS) | caddy | Default. Alternatives: Traefik. |
-| Gateway API (Phase 1) | Owns policy, audit log, RAG, memory and conversation history. | gateway | Default. |
+| Gateway | The only path to the model: policy, access rules, audit log, Recall, memory and searchable history. | gateway | Default. |
 | Encrypted backups (restic) | restic (encrypted) to local disk + optional offline drive | backups | Default. Alternatives: borg. |
 | Model pinning | Model files pinned by checksum; no auto-upgrade; a new version must pass the golden-set eval before promotion. | model-pinning | Default. |
 | sqlite-vec + SQLite FTS5 (in-process, no extra service) | Semantic + keyword (hybrid) search over documents and history. | vector-store | Default. Alternatives: LanceDB, Chroma, Qdrant. |

@@ -6,6 +6,7 @@ generated/
 secrets/
 .env
 .env.secrets
+.env.local
 logs/
 profile.yaml
 config/catalog_verification.yaml

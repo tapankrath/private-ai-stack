@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Private AI Setup Guide</title>
+<meta name="description" content="Set up a private, local AI assistant on a Mac, Windows or Linux computer, at any skill level, including on hardware other than the recommended one.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Figtree:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a reading page. Contents rail on the left (desktop), one 70-character column of text. */
+:root {
+  --bg: #f5f7f6; --surface: #ffffff; --sunk: #eef2f0; --ink: #16221e; --muted: #5a6964; --line: #dbe3df;
+  --accent: #14735c; --accent-soft: #e2f1eb; --accent-line: #a9d3c3;
+  --f-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f1513; --surface: #161e1b; --sunk: #1c2622; --ink: #e4ece8; --muted: #95a59f; --line: #2a3632;
+  --accent: #4cc39f; --accent-soft: #173229; --accent-line: #2e6553; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0f1513; --surface: #161e1b; --sunk: #1c2622; --ink: #e4ece8; --muted: #95a59f; --line: #2a3632;
+  --accent: #4cc39f; --accent-soft: #173229; --accent-line: #2e6553; color-scheme: dark }
+:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+* { box-sizing: border-box }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.65 var(--f-body); -webkit-font-smoothing: antialiased; }
+a { color: var(--accent); }
+.wrap { max-width: 1160px; margin: 0 auto; padding-block: 20px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px 20px; margin-bottom: 28px; }
+.brand { display: flex; align-items: center; gap: 10px; font: 700 18px var(--f-display); color: var(--ink); text-decoration: none; }
+.bar nav { display: flex; gap: 18px; font-size: 14px; }
+.bar nav a { color: var(--muted); text-decoration: none; font-weight: 500; }
+.layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 40px; align-items: start; }
+@media (max-width: 860px) { .layout { grid-template-columns: minmax(0, 1fr); gap: 16px; } }
+.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); font-size: 14px; }
+@media (max-width: 860px) { .toc { position: static; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; } }
+.toc p { font: 500 11.5px var(--f-mono); text-transform: uppercase; letter-spacing: .09em; color: var(--accent); margin: 0 0 8px; }
+.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.toc a { color: var(--muted); text-decoration: none; }
+.toc a:hover { color: var(--ink); }
+article { min-width: 0; max-width: 72ch; }
+article h1 { font: 700 clamp(30px, 4.5vw, 44px)/1.1 var(--f-display); letter-spacing: -.02em; margin: 0 0 14px; text-wrap: balance; }
+article h2 { font: 700 24px/1.25 var(--f-display); margin: 48px 0 12px; padding-top: 18px; border-top: 1px solid var(--line); text-wrap: balance; scroll-margin-top: 16px; }
+article h3 { font: 700 18px/1.3 var(--f-display); margin: 30px 0 8px; }
+article p, article li { text-wrap: pretty; }
+article ul, article ol { padding-left: 22px; }
+article li { margin: 4px 0; }
+article li > ul { margin: 4px 0; }
+code { font-family: var(--f-mono); font-size: .88em; background: var(--sunk); border-radius: 4px; padding: 1px 5px; }
+pre { position: relative; background: var(--sunk); border: 1px solid var(--line); border-radius: 10px; padding: 12px 70px 12px 14px; overflow-x: auto; font: 13.5px/1.6 var(--f-mono); }
+pre code { background: none; padding: 0; font-size: inherit; }
+pre button { position: absolute; top: 8px; right: 8px; font: 600 12px var(--f-body); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 3px 9px; cursor: pointer; }
+.tbl { overflow-x: auto; margin: 14px 0; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+th { text-align: left; font-weight: 600; font-size: 13px; color: var(--muted); background: var(--sunk); padding: 9px 12px; border-bottom: 1px solid var(--line); }
+td { padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+blockquote { margin: 16px 0; padding: 12px 16px; background: var(--accent-soft); border-radius: 10px; }
+blockquote p { margin: 0; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="bar">
+    <a class="brand" href="index.html">
+      <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect x="1" y="1" width="26" height="26" rx="7" fill="var(--accent)"/><path d="M8 19V9m4 10v-6m4 6v-8m4 8v-4" stroke="var(--surface)" stroke-width="2.4" stroke-linecap="round"/></svg>
+      Right-Size Advisor
+    </a>
+    <nav aria-label="Links"><a href="index.html">Advisor</a><a href="https://github.com/tapankrath/private-ai-stack" target="_blank" rel="noopener">Source code</a></nav>
+  </div>
+  <div class="layout">
+    <nav class="toc" aria-label="Contents"><p>Contents</p><ol><li><a href="#pick-your-path">Pick your path</a></li><li><a href="#part-1-before-you-start-all-paths">Part 1. Before you start (all paths)</a></li><li><a href="#part-2-path-a-try-a-local-model-in-15-minutes">Part 2. Path A: try a local model in 15 minutes</a></li><li><a href="#part-3-path-b-the-private-stack">Part 3. Path B: the private stack</a></li><li><a href="#part-4-when-your-hardware-is-not-the-recommended-one">Part 4. When your hardware is not the recommended one</a></li><li><a href="#part-5-path-c-office-server-additions-to-path-b">Part 5. Path C: office server (additions to Path B)</a></li><li><a href="#part-6-troubleshooting">Part 6. Troubleshooting</a></li></ol></nav>
+    <article>
+<h1>Setup Guide</h1>
+<p>This guide takes you from &quot;I have a recommendation&quot; to &quot;it runs on my machine&quot;. It is written for
+every skill level. Where a step needs the terminal, the exact command is given, and you can copy
+it as is.</p>
+<p>You do not need the recommended hardware to start. Part 4 explains what to do with the machine
+you already have, and with other kinds of hardware.</p>
+<h2 id="pick-your-path">Pick your path</h2>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>Time</th>
+<th>Good for</th>
+<th>What you get</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>A. Try it today</strong></td>
+<td>15–30 min</td>
+<td>Anyone, before deciding anything</td>
+<td>A private chat model on your computer. No document search, no access rules.</td>
+</tr>
+<tr>
+<td><strong>B. Private stack</strong></td>
+<td>1–3 hours</td>
+<td>One person or a household; anyone the Advisor put in tier 1 or 2</td>
+<td>Everything the Advisor picked: the Gateway, Recall (answers from your documents and history, with sources), memory, backups, outbound traffic blocked.</td>
+</tr>
+<tr>
+<td><strong>C. Office server</strong></td>
+<td>A day</td>
+<td>Offices; tier 2 or 3; someone comfortable with Linux</td>
+<td>Path B on a shared server, plus sign-in for each person, shared folders with access rules, monitoring and backups.</td>
+</tr>
+</tbody>
+</table>
+<p>Path A is a good first step for everyone. It shows how fast a local model is on your machine,
+and you can keep it or replace it with Path B later. Nothing in Path A gets in the way of Path B.</p>
+<h2 id="part-1-before-you-start-all-paths">Part 1. Before you start (all paths)</h2>
+<ol>
+<li><strong>Know your plan.</strong> Open the Advisor page and describe your needs, or run <code>make wizard</code>
+later in Path B. The result names the model, how much memory it needs, and the disk space.</li>
+<li><strong>Turn on disk encryption.</strong> Your conversations and documents will live on this disk.
+<ul>
+<li>Mac: System Settings → Privacy &amp; Security → FileVault → Turn On.</li>
+<li>Windows: Settings → Privacy &amp; security → Device encryption (or BitLocker on Pro).</li>
+<li>Linux: encryption is chosen at install time (LUKS). If your disk is not encrypted, store
+the project on an encrypted drive.</li>
+</ul>
+</li>
+<li><strong>Check free disk space.</strong> Models take 3–40 GB each. The Advisor's &quot;Disk&quot; figure includes
+a year of growth.</li>
+<li><strong>For a computer that will serve others</strong> (Path C), stop it from sleeping and plug it into
+the router with a cable.</li>
+</ol>
+<h2 id="part-2-path-a-try-a-local-model-in-15-minutes">Part 2. Path A: try a local model in 15 minutes</h2>
+<p>Ollama is the free, open-source program that runs the model. It only answers requests from
+this computer by default (address <code>127.0.0.1</code>).</p>
+<h3 id="mac-apple-silicon-m1-or-later">Mac (Apple Silicon: M1 or later)</h3>
+<ol>
+<li>Download Ollama from https://ollama.com/download and drag it into Applications. Open it once;
+a llama icon appears in the menu bar.</li>
+<li>Open <strong>Terminal</strong> (press Cmd + Space and type &quot;Terminal&quot;) and download a model. Use the one
+the Advisor named. For a 16 GB Mac, for example:<pre><code>ollama pull qwen3:8b
+</code></pre>
+</li>
+<li>Chat with it:<pre><code>ollama run qwen3:8b
+</code></pre>
+Type a question and press Enter. Type <code>/bye</code> to leave.</li>
+</ol>
+<h3 id="windows-10-or-11">Windows 10 or 11</h3>
+<ol>
+<li>Download and run the Windows installer from https://ollama.com/download.</li>
+<li>Open <strong>PowerShell</strong> from the Start menu and run the same two commands as on the Mac:
+<code>ollama pull qwen3:8b</code>, then <code>ollama run qwen3:8b</code>.</li>
+</ol>
+<p>If you have an NVIDIA graphics card, install the latest driver from nvidia.com first. Ollama
+uses the card automatically.</p>
+<h3 id="linux">Linux</h3>
+<pre><code>curl -fsSL https://ollama.com/install.sh | sh
+ollama pull qwen3:8b
+ollama run qwen3:8b
+</code></pre>
+<h3 id="is-it-using-the-graphics-chip">Is it using the graphics chip?</h3>
+<p>While a model is loaded, run <code>ollama ps</code>. The PROCESSOR column should say <code>100% GPU</code>. If it says
+<code>CPU</code>, or a split like <code>48%/52% CPU/GPU</code>, the model does not fit in graphics memory and will be
+slow. Pick a smaller model; see Part 4.</p>
+<h3 id="what-path-a-does-not-do">What Path A does not do</h3>
+<p>Path A is a chat model and nothing else. It does not search your documents, keep a searchable
+history with sources, enforce who can see what, or block the program from going online (Ollama
+checks for updates). Path B adds all of that.</p>
+<h2 id="part-3-path-b-the-private-stack">Part 3. Path B: the private stack</h2>
+<p>You will install three free tools, download this project, describe your needs, and start it. The
+project then downloads only the models and services your plan needs.</p>
+<h3 id="step-1-install-the-tools">Step 1. Install the tools</h3>
+<p><strong>Mac</strong></p>
+<ol>
+<li><strong>Command line tools (includes git and make).</strong> In Terminal run <code>xcode-select --install</code> and
+click Install.</li>
+<li><strong>Python 3.10 or newer.</strong> The Mac's built-in Python is too old. Install the latest Python 3
+from https://www.python.org/downloads/macos/.</li>
+<li><strong>Docker Desktop</strong> from https://www.docker.com/products/docker-desktop/. Open it once and wait
+until it says it is running.</li>
+<li><strong>Ollama</strong>, as in Path A. On a Mac, Ollama must run as a normal app. Docker on a Mac cannot use
+the graphics chip, so the project connects to the Ollama app instead of running its own.</li>
+</ol>
+<p><strong>Windows</strong></p>
+<p>The project's commands are written for Linux, so on Windows they run inside WSL, Windows' built-in
+Linux environment.</p>
+<ol>
+<li>Open PowerShell <strong>as administrator</strong> and run <code>wsl --install</code>. Restart when asked. An Ubuntu
+window opens; choose a user name and password.</li>
+<li><strong>Docker Desktop</strong> from https://www.docker.com/products/docker-desktop/. In Docker Desktop →
+Settings → Resources → WSL integration, switch on <strong>Ubuntu</strong>.</li>
+<li><strong>NVIDIA card:</strong> install the normal Windows driver from nvidia.com. Do not install a driver
+inside Ubuntu; WSL uses the Windows one.</li>
+<li>In the <strong>Ubuntu</strong> window, install the rest:<pre><code>sudo apt update &amp;&amp; sudo apt install -y git make python3-venv python3-pip openssl
+</code></pre>
+</li>
+</ol>
+<p>From here on, run every command in the <strong>Ubuntu</strong> window, not PowerShell.</p>
+<p><strong>Linux (Ubuntu or Debian)</strong></p>
+<pre><code>sudo apt update &amp;&amp; sudo apt install -y git make python3-venv python3-pip openssl
+curl -fsSL https://get.docker.com | sh
+sudo usermod -aG docker $USER        # then log out and back in
+</code></pre>
+<ul>
+<li><strong>NVIDIA card:</strong> install the driver (<code>sudo ubuntu-drivers install</code>), then the NVIDIA Container
+Toolkit by following https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html,
+and finish with <code>sudo nvidia-ctk runtime configure --runtime=docker &amp;&amp; sudo systemctl restart docker</code>.</li>
+<li><strong>AMD card:</strong> install ROCm by following AMD's guide for your card. The project uses Ollama's
+ROCm build automatically when your plan says AMD.</li>
+<li><strong>No graphics card:</strong> nothing extra. The project leaves out the GPU settings automatically.</li>
+</ul>
+<h3 id="step-2-download-the-project">Step 2. Download the project</h3>
+<pre><code>git clone https://github.com/tapankrath/private-ai-stack.git
+cd private-ai-stack
+python3 -m venv .venv &amp;&amp; source .venv/bin/activate
+make install
+</code></pre>
+<p>If you open a new terminal later, run <code>cd private-ai-stack &amp;&amp; source .venv/bin/activate</code> first.</p>
+<h3 id="step-3-describe-your-needs">Step 3. Describe your needs</h3>
+<p>Choose one:</p>
+<ul>
+<li><strong>From the Advisor page:</strong> click <strong>Copy profile</strong> at the bottom of your result, then save it
+as <code>profile.yaml</code> in the project folder. On a Mac: <code>pbpaste &gt; profile.yaml</code>. In WSL or Linux,
+run <code>nano profile.yaml</code>, paste, and press Ctrl+O, Enter, then Ctrl+X.</li>
+<li><strong>Answer questions in the terminal:</strong> <code>make wizard</code>.</li>
+<li><strong>Start from an example:</strong> <code>cp profiles/solo-researcher-16gb.yaml profile.yaml</code>, then edit it.</li>
+</ul>
+<p>Then run:</p>
+<pre><code>make advise
+</code></pre>
+<p>Read <code>generated/recommendation.md</code>. It lists what will be installed and what is left out, and
+it flags anything to double-check.</p>
+<h3 id="step-4-create-passwords-and-download-the-models">Step 4. Create passwords and download the models</h3>
+<pre><code>make secrets        # random passwords and keys, stored in ./secrets (never shared)
+make pull           # downloads ONLY the models in your plan; the only step that goes online
+</code></pre>
+<p>On a Mac, use <code>make pull-native</code> instead of <code>make pull</code>; it downloads into the Ollama app.</p>
+<p>If you plan to search your own documents, set up the folder list now:</p>
+<pre><code>cp config/collections.example.yaml config/collections.yaml
+</code></pre>
+<p>Edit it to name your folders (see Step 7), and put the documents in a <code>documents</code> folder inside
+the project. To use another folder, add the line <code>DOCUMENTS_DIR=/path/to/your/folder</code> to a file
+named <code>.env.local</code> in the project folder. The project only reads that folder; it never changes
+your files.</p>
+<blockquote>
+<p><strong>Your own settings go in <code>.env.local</code>.</strong> <code>make advise</code> rewrites the generated settings each
+time, but never touches <code>.env.local</code>, and anything in it wins.</p>
+</blockquote>
+<h3 id="step-5-start-it">Step 5. Start it</h3>
+<pre><code>make up
+</code></pre>
+<p>The first start builds the Gateway and takes a few minutes. Then open <strong>https://localhost:8443</strong>
+in your browser.</p>
+<ul>
+<li>The browser warns about the certificate the first time. It was made on your machine, so this
+is expected: choose <strong>Advanced → Continue</strong> (or <strong>Show details → visit this website</strong>).</li>
+<li><strong>Create your account.</strong> The first account becomes the administrator.</li>
+<li>In the model menu you will see your model three ways: the plain name (just chat),
+<code>… + Recall</code> (answers from your documents and history, with sources), and <code>… + Web</code> (private
+web search, if you turned it on).</li>
+</ul>
+<h3 id="step-6-prove-nothing-leaks">Step 6. Prove nothing leaks</h3>
+<pre><code>make egress-test
+</code></pre>
+<p>Every line should say <code>ok</code> or <code>skip</code> (named exceptions such as private web search). If any line
+says <code>LEAK</code> or <code>BYPASS</code>, stop and fix it before adding real data.</p>
+<p>On a Mac, the containers are cut off, but the Ollama app itself can still go online (it checks
+for updates). To block that too, use an outbound firewall such as LuLu (free, open source,
+objective-see.org) and deny Ollama's outgoing connections; allow them again only while you run
+<code>make pull-native</code>.</p>
+<h3 id="step-7-add-your-documents">Step 7. Add your documents</h3>
+<p>Each entry in <code>config/collections.yaml</code> is a folder and its rules. <code>sensitivity</code> is one of
+<code>public</code>, <code>personal</code>, <code>confidential</code> or <code>restricted</code>. Restricted folders are never searched until
+you unlock them for a session.</p>
+<pre><code>make ingest
+</code></pre>
+<p>After that, the background worker picks up new and changed files on its own.</p>
+<h3 id="step-8-your-control-page">Step 8. Your control page</h3>
+<pre><code>make ui-token
+</code></pre>
+<p>This prints a sign-in token for <strong>https://localhost:8443/gateway/ui</strong>. There you can see and
+search your history, approve or delete memory cards, export everything, and delete conversations
+for good.</p>
+<h3 id="step-9-backups">Step 9. Backups</h3>
+<p>Choose an encrypted backup location (an external drive, or a second machine), then run:</p>
+<pre><code>export RESTIC_REPOSITORY=/Volumes/Backup/private-ai      # example: an external drive
+export RESTIC_PASSWORD_FILE=$PWD/secrets/backup_password
+openssl rand -hex 24 &gt; secrets/backup_password
+make backup
+make restore-drill        # proves the backup can actually be restored
+</code></pre>
+<p>Keep a copy of <code>secrets/backup_password</code> somewhere safe and offline. Without it the backup cannot
+be read.</p>
+<h3 id="everyday-use">Everyday use</h3>
+<table>
+<thead>
+<tr>
+<th>To</th>
+<th>Run</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Stop everything</td>
+<td><code>make down</code></td>
+</tr>
+<tr>
+<td>Start again</td>
+<td><code>make up</code></td>
+</tr>
+<tr>
+<td>Change your needs</td>
+<td>edit <code>profile.yaml</code>, then <code>make advise &amp;&amp; make pull &amp;&amp; make up</code></td>
+</tr>
+<tr>
+<td>Try a new model safely</td>
+<td><code>make eval</code> before and after; keep the new model only if it scores no worse</td>
+</tr>
+</tbody>
+</table>
+<h2 id="part-4-when-your-hardware-is-not-the-recommended-one">Part 4. When your hardware is not the recommended one</h2>
+<p>The Advisor recommends the <em>smallest</em> setup that does the whole job well. You can run on less, on
+something different, or on more. Start by telling the Advisor what you actually have: on the page,
+choose your machine under <strong>Hardware</strong>. In the terminal, set <code>hardware.override</code> in <code>profile.yaml</code>
+and run <code>make advise</code>. It re-fits everything to that machine and says what changes.</p>
+<h3 id="less-memory-than-recommended">Less memory than recommended</h3>
+<p>Use these levers in order, from cheapest to most costly in quality:</p>
+<ol>
+<li><strong>Shorter context.</strong> Set <code>usage.context_needs: standard</code> (about 8,000 tokens, enough for chat
+and most questions). Memory for the conversation grows with context length.</li>
+<li><strong>Fewer people at once.</strong> Lower <code>users.peak_concurrent</code>. Each simultaneous conversation needs
+its own working memory.</li>
+<li><strong>Fewer extra models.</strong> Leave out the jobs you can live without, such as photos, coding or
+transcription. Each adds a model that stays in memory.</li>
+<li><strong>A smaller model.</strong> The Advisor does this on its own when nothing bigger fits, and tells you
+if the model is below the size it recommends for your tier.</li>
+</ol>
+<p>What to expect from smaller machines:</p>
+<table>
+<thead>
+<tr>
+<th>Machine</th>
+<th>What runs well</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>8 GB Mac or laptop</td>
+<td>A 3–4B model; short answers</td>
+<td>Fine for drafting and quick questions; weak at long documents</td>
+</tr>
+<tr>
+<td>16 GB Mac, or a PC with an 8–12 GB card</td>
+<td>7–9B models</td>
+<td>A good personal assistant; document search works well</td>
+</tr>
+<tr>
+<td>32–64 GB Mac, or a 24 GB card</td>
+<td>14–30B models, including fast &quot;mixture of experts&quot; models</td>
+<td>Office-quality answers</td>
+</tr>
+<tr>
+<td>No graphics card</td>
+<td>3–8B models, slowly</td>
+<td>Expect a few words per second. Good for a trial or overnight batch jobs, not for chat all day</td>
+</tr>
+</tbody>
+</table>
+<h3 id="different-kinds-of-hardware">Different kinds of hardware</h3>
+<table>
+<thead>
+<tr>
+<th>Hardware</th>
+<th>Strengths</th>
+<th>Watch out for</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Mac (Apple Silicon)</strong></td>
+<td>Quiet, low power, large shared memory; very easy</td>
+<td>Memory cannot be upgraded later, so buy enough up front. Ollama runs as an app, not in Docker</td>
+</tr>
+<tr>
+<td><strong>PC with an NVIDIA card</strong></td>
+<td>Fastest for the money; the only choice for vLLM (many users at once)</td>
+<td>Memory is the card's memory, not the PC's RAM. A used RTX 3090 (24 GB) is the usual bargain</td>
+</tr>
+<tr>
+<td><strong>PC with an AMD card</strong></td>
+<td>Good value for memory</td>
+<td>Linux with ROCm works best; check that your card is on AMD's ROCm support list</td>
+</tr>
+<tr>
+<td><strong>AMD Ryzen AI Max or NVIDIA DGX Spark boxes</strong></td>
+<td>Up to 128 GB shared memory in a small box; runs large models</td>
+<td>Slower per word than a desktop card of the same price; best when model size matters more than speed</td>
+</tr>
+<tr>
+<td><strong>A spare server with no GPU</strong></td>
+<td>Already paid for</td>
+<td>Only for small models or batch work</td>
+</tr>
+</tbody>
+</table>
+<h3 id="two-machines-instead-of-one">Two machines instead of one</h3>
+<p>Use a desktop or mini PC as the &quot;brain&quot; and reach it from your laptop or phone at home or in the
+office:</p>
+<ol>
+<li>Run Path B on the desktop.</li>
+<li>In <code>.env.local</code>, add <code>BIND_ADDRESS=192.168.1.20</code>, using the desktop's own local network
+address, then run <code>make up</code>.</li>
+<li>On other devices, open <code>https://192.168.1.20:8443</code>.</li>
+</ol>
+<p>Never forward this port on your router to the internet. For access from outside, use a private
+network tool such as WireGuard or Tailscale.</p>
+<h3 id="using-what-you-already-own-first">Using what you already own first</h3>
+<p>Before buying anything, run Path A or B on the best machine you have for two weeks. Note what is
+too slow or does not fit, then tell the Advisor your budget. Its &quot;Spend more, get a stronger
+model&quot; table shows what each step up buys you.</p>
+<h3 id="simpler-alternatives-to-this-project">Simpler alternatives to this project</h3>
+<p>If you only need chat on one computer, these desktop apps are easier to install. None of them
+adds the Gateway's access rules, audit log, Restricted folders or outbound blocking.</p>
+<table>
+<thead>
+<tr>
+<th>App</th>
+<th>Open source</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ollama's own app</td>
+<td>Yes</td>
+<td>Includes a simple chat window on Mac and Windows</td>
+</tr>
+<tr>
+<td>Jan (jan.ai)</td>
+<td>Yes</td>
+<td>Chat app that runs models locally</td>
+</tr>
+<tr>
+<td>AnythingLLM Desktop</td>
+<td>Yes</td>
+<td>Adds document chat on one computer</td>
+</tr>
+<tr>
+<td>LM Studio</td>
+<td>No (free)</td>
+<td>Polished; can use Apple's MLX for speed on a Mac</td>
+</tr>
+</tbody>
+</table>
+<p>For work that is not sensitive, a hosted service can be cheaper. The Advisor's three-year cost
+table compares the options honestly. Many people keep the sensitive work local and use a hosted
+service for the rest.</p>
+<h2 id="part-5-path-c-office-server-additions-to-path-b">Part 5. Path C: office server (additions to Path B)</h2>
+<ul>
+<li><strong>Run it on Linux.</strong> Use a desktop or server that stays on, with full-disk encryption and an
+outbound firewall that denies by default (<code>sudo ufw default deny outgoing</code>, then allow only what
+<code>generated/config/policy.yaml</code> lists).</li>
+<li><strong>Sign-in for each person.</strong> If your plan includes Authentik, open
+<code>https://&lt;server&gt;:9443/if/flow/initial-setup/</code> after <code>make up</code> to create the admin account,
+then turn on MFA. Map groups to folders in <code>config/collections.yaml</code> with <code>grants</code>.</li>
+<li><strong>Shared folders.</strong> Give each team its own collection. Access rules are enforced inside the
+database, so a person never sees results from a folder they cannot read.</li>
+<li><strong>Monitoring.</strong> If your plan includes it, Grafana is at <code>https://&lt;server&gt;:8443/grafana/</code>.</li>
+<li><strong>Larger offices (20+ people, several GPUs):</strong> <code>deploy/k3s/</code> holds manifests for a small
+Kubernetes cluster with default-deny network rules.</li>
+<li><strong>Before go-live:</strong> work through <code>docs/SECURITY_CHECKLIST.md</code>, and run <code>make egress-test</code> and
+<code>make restore-drill</code>.</li>
+</ul>
+<h2 id="part-6-troubleshooting">Part 6. Troubleshooting</h2>
+<table>
+<thead>
+<tr>
+<th>What you see</th>
+<th>Likely cause</th>
+<th>What to do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>make: command not found</code></td>
+<td>Tools not installed</td>
+<td>Mac: <code>xcode-select --install</code>. Windows: run commands in the Ubuntu window. Linux: <code>sudo apt install make</code></td>
+</tr>
+<tr>
+<td><code>Cannot connect to the Docker daemon</code></td>
+<td>Docker is not running</td>
+<td>Open Docker Desktop and wait until it says running. Linux: <code>sudo systemctl start docker</code></td>
+</tr>
+<tr>
+<td><code>make advise</code> says no profile</td>
+<td><code>profile.yaml</code> is missing</td>
+<td>Run <code>make wizard</code>, or save the profile from the Advisor page (Step 3)</td>
+</tr>
+<tr>
+<td>Answers are very slow</td>
+<td>The model is partly on the processor</td>
+<td>Run <code>ollama ps</code> (Mac) or <code>docker compose exec ollama ollama ps</code>. If it is not <code>100% GPU</code>, choose a smaller model or shorter context (Part 4)</td>
+</tr>
+<tr>
+<td>&quot;Out of memory&quot;, or the model stops loading</td>
+<td>Too much for the machine</td>
+<td>Lower <code>peak_concurrent</code> or context, or drop an extra job, then <code>make advise &amp;&amp; make up</code></td>
+</tr>
+<tr>
+<td>The page will not open</td>
+<td>Something else uses port 8443</td>
+<td>Add <code>HTTPS_PORT=8444</code> to <code>.env.local</code>, run <code>make up</code>, and open <code>https://localhost:8444</code></td>
+</tr>
+<tr>
+<td>Mac: chat shows a connection error</td>
+<td>The Ollama app is closed</td>
+<td>Open Ollama from Applications; it must stay running</td>
+</tr>
+<tr>
+<td>A <code>LEAK</code> line in <code>make egress-test</code></td>
+<td>A container can reach the internet</td>
+<td>Do not add data. Check that you have not edited the <code>networks:</code> sections of <code>docker-compose.yml</code></td>
+</tr>
+<tr>
+<td>Recall answers &quot;I don't know&quot;</td>
+<td>Nothing relevant was indexed</td>
+<td>Check the paths in <code>config/collections.yaml</code> (they start with <code>/documents/</code>), then run <code>make ingest</code> and read its summary of files added</td>
+</tr>
+</tbody>
+</table>
+<p>If you are stuck, open an issue on the project's GitHub page and include the output of
+<code>make advise</code> and the failing command. Never include anything from the <code>secrets</code> folder.</p>
+
+    </article>
+  </div>
+</div>
+<script>
+document.querySelectorAll("article table").forEach(function (t) { var d = document.createElement("div"); d.className = "tbl"; t.parentNode.insertBefore(d, t); d.appendChild(t); });
+document.querySelectorAll("article pre").forEach(function (pre) {
+  var b = document.createElement("button"); b.type = "button"; b.textContent = "Copy"; pre.appendChild(b);
+  b.addEventListener("click", function () {
+    var txt = pre.querySelector("code").textContent;
+    var done = function () { b.textContent = "Copied"; setTimeout(function () { b.textContent = "Copy"; }, 1500); };
+    var fail = function () { var r = document.createRange(); r.selectNodeContents(pre.querySelector("code")); var s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = "Selected"; };
+    try { navigator.clipboard.writeText(txt).then(done, fail); } catch (e) { fail(); }
+  });
+});
+</script>
+</body>
+</html>

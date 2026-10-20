@@ -174,9 +174,9 @@
       },
       {
         "id": "gateway",
-        "name": "Gateway API (Phase 1)",
-        "reason": "Owns policy, audit log, RAG, memory and conversation history.",
-        "compose_profile": "gateway",
+        "name": "Gateway",
+        "reason": "The only path to the model: policy, access rules, audit log, Recall, memory and searchable history.",
+        "compose_profile": "ui",
         "alternatives": []
       },
       {

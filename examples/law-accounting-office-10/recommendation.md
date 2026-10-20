@@ -19,7 +19,7 @@ One mid-size general AI model on one server on your network handles your questio
 | Ollama | Simple model management; enough for this concurrency. | ollama | Default. Alternatives: llama.cpp server, vLLM. |
 | Open WebUI | Chat UI bound to localhost/LAN, telemetry disabled. | open-webui | Default. Alternatives: AnythingLLM, custom thin UI on the Gateway. |
 | Caddy reverse proxy | Caddy (only container with a published port; local CA TLS) | caddy | Default. Alternatives: Traefik. |
-| Gateway API (Phase 1) | Owns policy, audit log, RAG, memory and conversation history. | gateway | Default. |
+| Gateway | The only path to the model: policy, access rules, audit log, Recall, memory and searchable history. | gateway | Default. |
 | Encrypted backups (restic) | restic (encrypted) to local disk + optional offline drive | backups | Default. Alternatives: borg. |
 | Model pinning | Model files pinned by checksum; no auto-upgrade; a new version must pass the golden-set eval before promotion. | model-pinning | Default. |
 | Postgres | Shared conversation, metadata and ACL store for multiple users. | postgres | Default. |

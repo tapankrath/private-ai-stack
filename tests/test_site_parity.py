@@ -50,6 +50,15 @@ def test_data_file_is_current():
     assert (ROOT / "site" / "advisor-data.js").read_text() == mod.build(), "run: python scripts/build-site.py"
 
 
+def test_guide_page_is_current():
+    import importlib.util
+    pytest.importorskip("markdown_it")
+    spec = importlib.util.spec_from_file_location("build_site", ROOT / "scripts" / "build-site.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    assert (ROOT / "site" / "guide.html").read_text() == mod.build_guide(), "run: python scripts/build-site.py"
+
+
 def test_js_matches_python():
     out = subprocess.run(["node", "-e", RUNNER, str(ROOT)], capture_output=True, text=True, check=True).stdout
     js = json.loads(out)

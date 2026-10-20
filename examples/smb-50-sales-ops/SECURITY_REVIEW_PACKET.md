@@ -14,7 +14,7 @@ Figures are estimates. This packet supports a review; it is not a compliance cer
 - Ollama sidecar: Serves embeddings and any small or specialist models.
 - Open WebUI: Chat UI bound to localhost/LAN, telemetry disabled.
 - Caddy reverse proxy: Caddy (only container with a published port; local CA TLS)
-- Gateway API (Phase 1): Owns policy, audit log, RAG, memory and conversation history.
+- Gateway: The only path to the model: policy, access rules, audit log, Recall, memory and searchable history.
 - Encrypted backups (restic): restic (encrypted) to local disk + optional offline drive
 - Model pinning: Model files pinned by checksum; no auto-upgrade; a new version must pass the golden-set eval before promotion.
 - Postgres: Shared conversation, metadata and ACL store for multiple users.

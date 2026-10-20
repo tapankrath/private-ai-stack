@@ -13,6 +13,10 @@ It has two parts:
   keeps an audit log, and adds Recall (cited answers from your documents and past chats),
   memory cards, retention, export, optional connectors and web research, and a customize track.
 
+**New here?** Read [docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md). It covers a 15-minute trial, the full
+private stack on Mac, Windows or Linux, office servers, and what to do when your hardware differs
+from the recommendation.
+
 ## Quickstart
 
 ```bash
@@ -105,8 +109,11 @@ and the deterministic version is shown instead.
 
 ## Browser version of the advisor
 
-`site/` is a static page: `index.html`, the engine ported to JavaScript (`advisor-engine.js`) and
-the catalog (`advisor-data.js`, built by `python scripts/build-site.py`). It needs no server and
+`site/` is a static page: `index.html`, the engine ported to JavaScript (`advisor-engine.js`), the
+catalog (`advisor-data.js`) and the setup guide (`guide.html`), the last two built by
+`python scripts/build-site.py` (the guide needs `pip install markdown-it-py`). For each result
+the page also writes setup steps for your plan and operating system, and compares the same needs
+on six common machines. It needs no server and
 sends nothing anywhere. `tests/test_site_parity.py` checks that it gives the same answers as the
 Python engine. The included GitHub Actions workflow publishes `site/` to GitHub Pages: in the
 repo settings, set Pages to deploy from GitHub Actions.

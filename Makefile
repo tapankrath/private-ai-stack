@@ -2,7 +2,9 @@
 PROFILE ?= profile.yaml
 OUT     ?= generated
 PY      ?= python3
-COMPOSE  = docker compose --env-file $(OUT)/.env -f docker-compose.yml -f $(OUT)/docker-compose.override.yml
+# Your own settings (BIND_ADDRESS, HTTPS_PORT, DOCUMENTS_DIR, ...) go in .env.local, which
+# `make advise` never overwrites; it is read after the generated settings, so it wins.
+COMPOSE  = docker compose --env-file $(OUT)/.env $(if $(wildcard .env.local),--env-file .env.local) -f docker-compose.yml -f $(OUT)/docker-compose.override.yml
 
 .PHONY: help install advise wizard detect explain secrets intake pull pull-native up down egress-test test ui-token ingest eval backup restore-drill
 

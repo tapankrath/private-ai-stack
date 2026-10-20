@@ -28,3 +28,10 @@
 		reverse_proxy open-webui:8080
 	}
 }
+
+# Sign-in (Authentik), only reachable when the profile includes SSO (port published by the
+# generated override). Authentik needs its own origin, so it gets its own port.
+:9443 {
+	tls internal
+	reverse_proxy authentik-server:9000
+}

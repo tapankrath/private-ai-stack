@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Build site/advisor-data.js from config/*.yaml and profiles/*.yaml.
+"""Build site/advisor-data.js (from config/*.yaml and profiles/*.yaml) and site/guide.html
+(from docs/SETUP_GUIDE.md).
 
 The public Advisor page (site/index.html) runs the JavaScript port of the engine entirely in
-the visitor's browser. Re-run this after editing the catalog, rules or prices:
+the visitor's browser. Re-run this after editing the catalog, rules, prices or the guide:
 
     python scripts/build-site.py
 """
@@ -42,7 +43,39 @@ def build() -> str:
             f"globalThis.ADVISOR_DATA = {body};\n")
 
 
+GUIDE_TEMPLATE = (ROOT / "site" / "guide.template.html")
+
+
+def build_guide() -> str | None:
+    """Render the setup guide (CommonMark + tables, as GitHub does). None if markdown-it-py is missing."""
+    try:
+        from markdown_it import MarkdownIt
+    except ImportError:
+        return None
+    import html
+    import re
+
+    body = MarkdownIt("gfm-like", {"linkify": False}).render((ROOT / "docs" / "SETUP_GUIDE.md").read_text())
+    toc = []
+
+    def anchor(m):
+        level, inner = m.group(1), m.group(2)
+        slug = re.sub(r"[^a-z0-9]+", "-", html.unescape(re.sub(r"<[^>]+>", "", inner)).lower()).strip("-")
+        if level == "2":
+            toc.append(f'<li><a href="#{slug}">{inner}</a></li>')
+        return f'<h{level} id="{slug}">{inner}</h{level}>'
+
+    body = re.sub(r"<h([23])>(.*?)</h\1>", anchor, body)
+    return GUIDE_TEMPLATE.read_text().replace("<!--TOC-->", "".join(toc)).replace("<!--BODY-->", body)
+
+
 if __name__ == "__main__":
     out = ROOT / "site" / "advisor-data.js"
     out.write_text(build())
     print(f"wrote {out} ({out.stat().st_size // 1024} KB)", file=sys.stderr)
+    guide = build_guide()
+    if guide is None:
+        print("markdown-it-py not installed: kept the existing site/guide.html (pip install markdown-it-py to rebuild it)", file=sys.stderr)
+    else:
+        (ROOT / "site" / "guide.html").write_text(guide)
+        print("wrote site/guide.html", file=sys.stderr)

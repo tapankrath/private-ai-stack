@@ -4,9 +4,10 @@
 #
 #   ALLOWED: caddy (edge proxy; host firewall must still block its outbound traffic)
 #            searxng (only when the research profile is on)
+#            ollama-relay (macOS only: forwards to one fixed address, the Ollama app on this Mac)
 set -uo pipefail
 
-ALLOWED_REGEX="${ALLOWED_REGEX:-caddy|searxng|model-pull}"
+ALLOWED_REGEX="${ALLOWED_REGEX:-caddy|searxng|model-pull|ollama-relay}"
 TARGETS=("https://1.1.1.1" "https://huggingface.co" "https://registry.ollama.ai")
 leaks=0
 
