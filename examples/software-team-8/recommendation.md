@@ -92,12 +92,13 @@ Cost is a concern you raised, so start with **Cost Comparison (Honest View)** be
 |---|---|---|---|---|
 | 3-year cost | $11,582 | $2,469 | $37,325 | $30,577 |
 | Low estimate | $11,582 | $1,395 | $33,903 | $30,577 |
+| Router fee (included) | – | $129 | – | – |
 | Where your prompts go | stay on your machine | sent to the router and whichever provider it routes to | sent to the model provider | sent to the subscription provider |
 
 3-year estimates. On these estimates, a hosted open-weight model API would be cheaper than local by about $9,113 over three years. Local is recommended here for privacy, availability, customization, not price. The saving has a privacy cost: every question, the chat history sent with it and the document passages Recall finds would go to the router and whichever provider it routes to. For this profile that is not just a preference: its regulated data makes it a compliance question.
 
 Local breakdown: hardware $0, power $482, admin time $10,800, networking $300.
-The open-weight API figure includes the router's 5.5% fee.
+The open-weight API figure includes $129 of router fees (5.5%).
 Subscription includes ~$1,777 of API usage for agents (subscriptions rarely cover them).
 Assumptions: 8 user(s) x 60 queries/day x 22 days/month; hosted APIs bill ~12,500 input tokens per question (8,000 question and instructions + 1,500 chat history resent + 3,000 Recall passages) and 500 output; the low figure counts the question only, at the cheapest provider; 4 agent(s) always on; admin time at $75/hour; electricity $0.17/kWh; High-memory machines may hold resale value while memory prices are high; resale is not counted.
 Prices not verified in the last 60 days: running costs, subscription price. Update config/pricing.yaml.

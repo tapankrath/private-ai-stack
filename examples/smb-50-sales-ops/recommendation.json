@@ -561,7 +561,8 @@
         "label": "Hosted open-weight model API (Qwen3.6 35B-A3B through a router)",
         "total_usd": 2774,
         "low_usd": 1447,
-        "fee_note": "includes the router's 5.5% fee",
+        "fee_usd": 145,
+        "fee_note": "includes $145 of router fees (5.5%)",
         "data_goes_to": "the router and whichever provider it routes to"
       },
       "api_frontier": {

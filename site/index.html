@@ -154,7 +154,7 @@ ul.list.split li { break-inside: avoid; margin-bottom: 12px; }
 h3 .count { font: 500 12px var(--f-mono); color: var(--muted); background: var(--sunk); border-radius: 999px; padding: 1px 8px; margin-left: 6px; vertical-align: 2px; }
 
 .tco { display: grid; gap: 12px; }
-.tco-row { display: grid; grid-template-columns: minmax(0, 250px) minmax(0, 1fr) 84px; gap: 12px; align-items: center; font-size: 13.5px; }
+.tco-row { display: grid; grid-template-columns: minmax(0, 250px) minmax(0, 1fr) 130px; gap: 12px; align-items: center; font-size: 13.5px; }
 .tco-row .track { position: relative; height: 14px; background: var(--sunk); border-radius: 4px; overflow: hidden; }
 .tco-row .fill { height: 100%; background: var(--m-aux); border-radius: 4px; opacity: .55; }
 .tco-row .low { position: absolute; inset: 0 auto 0 0; background: var(--m-aux); border-radius: 4px; }
@@ -162,11 +162,12 @@ h3 .count { font: 500 12px var(--f-mono); color: var(--muted); background: var(-
 .tco-row .lbl small.away { color: var(--warn); }
 .tco-row .lbl small.home { color: var(--good); }
 .tco-row .amt small { display: block; font-size: 11.5px; color: var(--muted); }
+.tco-row .amt small.fee { color: var(--warn); }
 .tco + .hint { margin-top: 14px; } .tco ~ .hint + .hint { margin-top: 6px; } .tco ~ .callout { margin-top: 12px; }
 .tco-row.local .fill, .tco-row.local .low { background: var(--accent); opacity: 1; }
 .tco-row.local span:first-child { font-weight: 600; }
 .tco-row .amt { font: 500 13.5px var(--f-mono); text-align: right; font-variant-numeric: tabular-nums; }
-@media (max-width: 560px) { .tco-row { grid-template-columns: minmax(0, 1fr) 84px; } .tco-row .track { grid-column: 1 / -1; grid-row: 2; } }
+@media (max-width: 560px) { .tco-row { grid-template-columns: minmax(0, 1fr) 120px; } .tco-row .track { grid-column: 1 / -1; grid-row: 2; } }
 .callout { border-radius: 10px; padding: 12px 14px; font-size: 14px; background: var(--sunk); }
 .callout.warn { background: var(--warn-soft); }
 ul.notes { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
@@ -474,8 +475,8 @@ footer { margin-top: 30px; font-size: 13px; color: var(--muted); display: grid; 
     return `<div class="tco">${opts.map(([k, o]) => `<div class="tco-row ${k === "local" ? "local" : ""}">
         <span class="lbl">${esc(o.label)}<small class="${o.data_goes_to ? "away" : "home"}">${o.data_goes_to ? "Your prompts are sent to " + esc(o.data_goes_to) : "Your prompts stay on your machine"}</small></span>
         <div class="track"><div class="low" style="width:${Math.max(1, 100 * o.low_usd / max)}%"></div><div class="fill" style="width:${Math.max(1, 100 * o.total_usd / max)}%"></div></div>
-        <span class="amt">${usd(o.total_usd)}${o.low_usd !== o.total_usd ? `<small>from ${usd(o.low_usd)}</small>` : ""}</span></div>`).join("")}</div>
-      <p class="hint">Hosted APIs charge for everything sent with each question: about ${pq.typical.toLocaleString("en-US")} tokens here (${pq.base.toLocaleString("en-US")} for the question and instructions, ${pq.history.toLocaleString("en-US")} of chat history resent${pq.recall ? `, ${pq.recall.toLocaleString("en-US")} of document passages from Recall` : ""}). The “from” figure counts the question alone at the cheapest provider.${t.options.api_open.fee_note ? " The open-weight figure " + esc(t.options.api_open.fee_note) + "." : ""}</p>
+        <span class="amt">${usd(o.total_usd)}${o.low_usd !== o.total_usd ? `<small>from ${usd(o.low_usd)}</small>` : ""}${o.fee_usd ? `<small class="fee">incl. ${usd(o.fee_usd)} fee</small>` : ""}</span></div>`).join("")}</div>
+      <p class="hint">Hosted APIs charge for everything sent with each question: about ${pq.typical.toLocaleString("en-US")} tokens here (${pq.base.toLocaleString("en-US")} for the question and instructions, ${pq.history.toLocaleString("en-US")} of chat history resent${pq.recall ? `, ${pq.recall.toLocaleString("en-US")} of document passages from Recall` : ""}). The “from” figure counts the question alone at the cheapest provider.${t.options.api_open.fee_note ? " The open-weight figure " + esc(t.options.api_open.fee_note) + ", charged when you buy credits by card." : ""}</p>
       <p class="hint">Local cost: ${esc(t.local.hardware_note)}; electricity ${usd(t.local.breakdown.power)}; ${t.admin_rate ? `upkeep time ${usd(t.local.breakdown.admin_time)} at $${t.admin_rate}/hour` : "your own upkeep time is not counted"}.${t.options.subscription.note ? " Subscription " + esc(t.options.subscription.note) + "." : ""}</p>
       <div class="callout">${esc(t.verdict)}</div>`;
   }

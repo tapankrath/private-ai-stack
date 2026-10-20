@@ -115,6 +115,7 @@ def tco(p: Profile, rec: dict, cfg: AdvisorConfig, today: dt.date | None = None)
     om, fr = pr["api"]["open_model"], pr["api"]["frontier"]
     om_fee, fr_fee = om.get("router_fee_fraction", 0), fr.get("router_fee_fraction", 0)
     api_open = _api_cost(om["usd_per_million"], tin, tout, om_fee)
+    api_open_fee = api_open - _api_cost(om["usd_per_million"], tin, tout)
     api_open_low = _api_cost(om.get("low_usd_per_million", om["usd_per_million"]), tin_low, tout, om_fee)
     api_frontier = _api_cost(fr["usd_per_million"], tin, tout, fr_fee)
     api_frontier_low = _api_cost(fr["usd_per_million"], tin_low, tout, fr_fee)
@@ -131,7 +132,8 @@ def tco(p: Profile, rec: dict, cfg: AdvisorConfig, today: dt.date | None = None)
                   "breakdown": {"hardware": round(hw_cost), "power": round(power), "admin_time": round(admin), "networking": network},
                   "hardware_note": hw_note, "data_goes_to": None},
         "api_open": {"label": om["label"], "total_usd": round(api_open), "low_usd": round(api_open_low),
-                     "fee_note": f"includes the router's {om_fee:.1%} fee" if om_fee else None, "data_goes_to": om.get("data_goes_to")},
+                     "fee_usd": round(api_open_fee),
+                     "fee_note": f"includes ${round(api_open_fee):,} of router fees ({om_fee:.1%})" if om_fee else None, "data_goes_to": om.get("data_goes_to")},
         "api_frontier": {"label": fr["label"], "total_usd": round(api_frontier), "low_usd": round(api_frontier_low),
                          "fee_note": f"includes a {fr_fee:.1%} fee" if fr_fee else None, "data_goes_to": fr.get("data_goes_to")},
         "subscription": {"label": sub["label"], "total_usd": round(sub_total), "low_usd": round(sub_total),

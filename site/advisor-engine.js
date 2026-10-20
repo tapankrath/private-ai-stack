@@ -495,7 +495,8 @@
       const options = {
         local: { label: "Local (this recommendation)", total_usd: localTotal, low_usd: localTotal, breakdown: { hardware: pyRound(hwCost), power: pyRound(power), admin_time: pyRound(admin), networking: network }, hardware_note: note, data_goes_to: null },
         api_open: { label: om.label, total_usd: pyRound(cost(om.usd_per_million, tin, tout, omFee)), low_usd: pyRound(cost(om.low_usd_per_million || om.usd_per_million, tinLow, tout, omFee)),
-          fee_note: omFee ? `includes the router's ${pct(omFee)} fee` : null, data_goes_to: om.data_goes_to || null },
+          fee_usd: pyRound(cost(om.usd_per_million, tin, tout, omFee) - cost(om.usd_per_million, tin, tout)),
+          fee_note: omFee ? `includes $${pyRound(cost(om.usd_per_million, tin, tout, omFee) - cost(om.usd_per_million, tin, tout)).toLocaleString("en-US")} of router fees (${pct(omFee)})` : null, data_goes_to: om.data_goes_to || null },
         api_frontier: { label: fr.label, total_usd: pyRound(cost(fr.usd_per_million, tin, tout, frFee)), low_usd: pyRound(cost(fr.usd_per_million, tinLow, tout, frFee)),
           fee_note: frFee ? `includes a ${pct(frFee)} fee` : null, data_goes_to: fr.data_goes_to || null },
         subscription: { label: sub.label, total_usd: pyRound(subTotal), low_usd: pyRound(subTotal), note: subAgents ? `includes ~$${pyRound(subAgents).toLocaleString("en-US")} of API usage for agents (subscriptions rarely cover them)` : null, data_goes_to: sub.data_goes_to || null },

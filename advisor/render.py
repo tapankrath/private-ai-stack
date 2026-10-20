@@ -208,6 +208,7 @@ def render_markdown(rec: dict, diff_lines: list[str] | None = None) -> str:
           "| | Local | API (open-weight model) | API (frontier model) | Subscription |", "|---|---|---|---|---|",
           f"| 3-year cost | {_usd(o['local']['total_usd'])} | {_usd(o['api_open']['total_usd'])} | {_usd(o['api_frontier']['total_usd'])} | {_usd(o['subscription']['total_usd'])} |",
           f"| Low estimate | {_usd(o['local']['low_usd'])} | {_usd(o['api_open']['low_usd'])} | {_usd(o['api_frontier']['low_usd'])} | {_usd(o['subscription']['low_usd'])} |",
+          f"| Router fee (included) | – | {_usd(o['api_open'].get('fee_usd', 0))} | – | – |",
           "| Where your prompts go | stay on your machine | " + " | ".join(f"sent to {o[k]['data_goes_to']}" for k in ("api_open", "api_frontier", "subscription")) + " |",
           "", f"3-year estimates. {t['verdict']}", "",
           f"Local breakdown: hardware {_usd(o['local']['breakdown']['hardware'])}, power {_usd(o['local']['breakdown']['power'])}, "
