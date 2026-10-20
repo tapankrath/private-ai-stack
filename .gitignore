@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+generated/
+secrets/
+.env
+.env.secrets
+logs/
+profile.yaml
+config/catalog_verification.yaml
