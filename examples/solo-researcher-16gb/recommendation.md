@@ -8,6 +8,10 @@ One small general AI model on your computer handles your questions and writing; 
 
 - *Where to begin*: Follow the two-week pilot plan on the hardware you already have.
 
+**Changes since last run:**
+
+- 3-year local cost: 97 -> 46
+
 ## What You Need
 
 | Component | What it does for you | Model / tool | Why this one |
@@ -72,14 +76,14 @@ One small general AI model on your computer handles your questions and writing; 
 
 | | Local | API (open-weight model) | API (frontier model) | Subscription |
 |---|---|---|---|---|
-| 3-year cost | $97 | $38 | $570 | $900 |
-| Low estimate | $97 | $15 | $285 | $900 |
+| 3-year cost | $46 | $38 | $570 | $900 |
+| Low estimate | $46 | $15 | $285 | $900 |
 | Router fee (included) | – | $2 | – | – |
 | Where your prompts go | stay on your machine | sent to the router and whichever provider it routes to | sent to the model provider | sent to the subscription provider |
 
-3-year estimates. On these estimates, a hosted open-weight model API would be cheaper than local by about $59 over three years. Local is recommended here for privacy, availability, security, not price. The saving has a privacy cost: every question, the chat history sent with it and the document passages Recall finds would go to the router and whichever provider it routes to.
+3-year estimates. On these estimates, a hosted open-weight model API would be cheaper than local by about $8 over three years. Local is recommended here for privacy, availability, security, not price. The saving has a privacy cost: every question, the chat history sent with it and the document passages Recall finds would go to the router and whichever provider it routes to.
 
-Local breakdown: hardware $0, power $97, admin time $0, networking $0.
+Local breakdown: hardware $0, power $46, admin time $0, networking $0.
 The open-weight API figure includes $2 of router fees (5.5%).
 Assumptions: 1 user(s) x 40 queries/day x 22 days/month; hosted APIs bill ~6,500 input tokens per question (2,000 question and instructions + 1,500 chat history resent + 3,000 Recall passages) and 500 output; the low figure counts the question only, at the cheapest provider; 0 agent(s); admin time at $0/hour (your own time is not priced); electricity $0.17/kWh; High-memory machines may hold resale value while memory prices are high; resale is not counted.
 Prices not verified in the last 60 days: running costs, subscription price. Update config/pricing.yaml.

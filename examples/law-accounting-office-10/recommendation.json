@@ -62,6 +62,7 @@
     "hardware": {
       "platform": "nvidia",
       "hw_key": "rtx_3090",
+      "gpu_count": 1,
       "source": "pc-rtx3090-24",
       "compute_class": "medium"
     },

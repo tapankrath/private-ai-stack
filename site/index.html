@@ -138,6 +138,7 @@ th { text-align: left; font-size: 12px; font-weight: 600; color: var(--muted); b
 td { border-bottom: 1px solid var(--line); padding: 10px 10px 10px 0; vertical-align: top; }
 tr:last-child td { border-bottom: 0; }
 td.n { font: 13px var(--f-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+td.cost small { display: block; font: 11.5px var(--f-body); color: var(--muted); }
 td .role { display: block; font-size: 12px; color: var(--muted); }
 tr.pick { cursor: pointer; }
 tr.pick:hover td { background: var(--sunk); }
@@ -289,6 +290,11 @@ footer { margin-top: 30px; font-size: 13px; color: var(--muted); display: grid; 
           <div class="q" id="vramwrap"><label class="l" for="vram">Graphics memory per card (GB)</label><input id="vram" type="number" min="1" step="1" inputmode="numeric"></div>
           <div class="q" id="countwrap"><label class="l" for="gpus">Number of cards</label><input id="gpus" type="number" min="1" max="8" step="1" inputmode="numeric"></div>
         </div>
+        <div id="ownfields" class="row">
+          <div class="q"><label class="l" for="owned">Do you have it already?</label><select id="owned"><option value="own">Yes, I have it</option><option value="buy">No, I'd buy it</option></select></div>
+          <div class="q" id="pricewrap"><label class="l" for="price">Price to buy it ($)</label><input id="price" type="number" min="0" step="50" inputmode="numeric"></div>
+        </div>
+        <p class="hint" id="pricehint" hidden></p>
         <div class="q"><label class="l" for="budget">Budget for new hardware</label><select id="budget">
           <option value="none">No budget set</option><option value="lt_1500">Under $1,500</option><option value="lt_5000">Under $5,000</option>
           <option value="lt_10000">Under $10,000</option><option value="lt_20000">Under $20,000</option><option value="lt_150000">Under $150,000</option></select></div>
@@ -334,14 +340,9 @@ footer { margin-top: 30px; font-size: 13px; color: var(--muted); display: grid; 
     "law-accounting-office-10": ["Law or accounting office", "10 people, confidential files"],
     "smb-50-sales-ops": ["50-person business", "Sales and operations"],
   };
-  const ALT_HW = [
-    { label: "Laptop, 16 GB, no graphics card", short: "16 GB laptop", hw: { platform: "cpu", ram: 16 } },
-    { label: "Mac, 16 GB", short: "Mac 16 GB", hw: { platform: "apple", ram: 16 } },
-    { label: "Mac, 48 GB (M4 Pro)", short: "Mac 48 GB", hw: { platform: "apple", ram: 48, chip: "apple_m4_pro" } },
-    { label: "PC with a 12 GB card (RTX 3060)", short: "PC + RTX 3060", hw: { platform: "nvidia", ram: 32, vram: 12, gpus: 1, chip: "rtx_3060" } },
-    { label: "PC with a 24 GB card (RTX 3090)", short: "PC + RTX 3090", hw: { platform: "nvidia", ram: 64, vram: 24, gpus: 1, chip: "rtx_3090" } },
-    { label: "Mini PC with 128 GB shared memory", short: "Ryzen AI Max 128 GB", hw: { platform: "ryzen", ram: 128 } },
-  ];
+  const REF = D.pricing.reference_machines || [];
+  const mid = (r) => (r[0] + r[1]) / 2;
+  const machineKey = (ov) => { if (!ov) return "null"; const o = Object.assign({}, ov); delete o.purchase_price_usd; return JSON.stringify(Object.keys(o).sort().map((k) => [k, o[k]])); };
 
   function chips(el, map, name) { el.innerHTML = Object.entries(map).map(([k, v]) => `<label class="chip"><input type="checkbox" name="${name}" value="${k}" id="${name}-${k}"><span>${esc(v)}</span></label>`).join(""); }
   chips($("jobs"), JOBS, "job"); chips($("dtypes"), DTYPES, "dt"); chips($("regulated"), REG, "rg");
@@ -357,9 +358,21 @@ footer { margin-top: 30px; font-size: 13px; color: var(--muted); display: grid; 
     const p = $("platform").value, list = CHIPS[p] || [], gpu = p === "nvidia" || p === "amd";
     $("hwfields").hidden = !p; $("chipwrap").hidden = !list.length; $("vramwrap").hidden = !gpu; $("countwrap").hidden = !gpu;
     $("ramlabel").textContent = gpu || p === "cpu" ? "Computer memory, RAM (GB)" : "Memory (GB)";
+    $("ownfields").hidden = !p; $("pricewrap").hidden = !p || $("owned").value !== "buy";
     const cur = $("chip").value;
     $("chip").innerHTML = `<option value="">Not sure</option>` + list.map((k) => `<option value="${k}">${esc(chipLabel(k))}</option>`).join("");
     if (list.includes(cur)) $("chip").value = cur;
+    syncPrice();
+  }
+  function typicalPrice() {
+    const h = formHw(); h.buy = false;
+    const m = REF.find((x) => machineKey(x.override) === machineKey(hwOverride(h)));
+    return m ? m.price_usd : null;
+  }
+  function syncPrice() {
+    const t = $("platform").value ? typicalPrice() : null, buying = $("owned").value === "buy" && !!$("platform").value;
+    $("pricehint").hidden = !(buying && t);
+    if (t) $("pricehint").textContent = `Typical price for this machine: ${usd(t[0])}–${usd(t[1])} (estimate).`;
   }
 
   // ---------- profile <-> form
@@ -372,19 +385,24 @@ footer { margin-top: 30px; font-size: 13px; color: var(--muted); display: grid; 
     setChecked("job", raw.jobs); setChecked("dt", d.types || []); setChecked("rg", s.regulated_data || []);
     $("volume").value = d.volume_gb || 0; $("qpd").value = u.queries_per_user_per_day == null ? 20 : u.queries_per_user_per_day;
     $("sens").value = s.level; $("latency").value = u.latency || "few_seconds"; $("ctx").value = u.context_needs || "standard"; $("shape").value = w.shape || "balanced";
+    ovToForm(raw.hardware && raw.hardware.override);
+    $("budget").value = (raw.hardware || {}).budget_usd || "none";
+    $("web").checked = !!f.web_research; $("airgap").checked = !!s.air_gapped; $("sso").checked = !!f.sso;
+    $("commercial").checked = (raw.licensing || {}).use === "commercial";
+    $("agents").value = (w.agents || {}).count || 0; $("always").checked = !!(w.agents || {}).always_on;
+  }
+  function ovToForm(ov) {
+    const hw = ov || {};
     let plat = "";
     if (hw.platform === "apple_silicon") plat = "apple";
     else if (hw.platform === "nvidia_dgx_spark") plat = "spark";
     else if (hw.platform === "amd_ryzen_ai_max") plat = "ryzen";
     else if (hw.platform) plat = hw.gpu === "nvidia" ? "nvidia" : hw.gpu === "amd" ? "amd" : "cpu";
-    $("platform").value = plat; syncHw();
-    $("chip").value = hw.chip || hw.gpu_model || "";
+    $("platform").value = plat;
     const cards = hw.gpu_count || 1;
     $("ram").value = hw.ram_gb || 32; $("vram").value = hw.vram_gb ? hw.vram_gb / cards : 24; $("gpus").value = cards;
-    $("budget").value = (raw.hardware || {}).budget_usd || "none";
-    $("web").checked = !!f.web_research; $("airgap").checked = !!s.air_gapped; $("sso").checked = !!f.sso;
-    $("commercial").checked = (raw.licensing || {}).use === "commercial";
-    $("agents").value = (w.agents || {}).count || 0; $("always").checked = !!(w.agents || {}).always_on;
+    $("owned").value = hw.purchase_price_usd ? "buy" : "own"; $("price").value = hw.purchase_price_usd || "";
+    syncHw(); $("chip").value = hw.chip || hw.gpu_model || ""; syncPrice();
   }
   const num = (id, d, min) => { const v = parseFloat($(id).value); return Number.isFinite(v) ? Math.max(v, min == null ? 0 : min) : d; };
   function hwOverride(h) {
@@ -397,10 +415,12 @@ footer { margin-top: 30px; font-size: 13px; color: var(--muted); display: grid; 
     else if (p === "ryzen") ov = { platform: "amd_ryzen_ai_max", gpu: "integrated", ram_gb: ram };
     else if (p === "cpu") ov = { platform: "linux_x86", gpu: "none", ram_gb: ram };
     if (ov) Object.keys(ov).forEach((k) => ov[k] === undefined && delete ov[k]);
+    if (ov && h.buy && h.price > 0) ov.purchase_price_usd = h.price;
     return ov;
   }
-  const formHw = () => ({ platform: $("platform").value, chip: $("chip").value, ram: num("ram", 32, 4), vram: num("vram", 24, 1), gpus: Math.round(num("gpus", 1, 1)) });
-  function fromForm(hwOver) {
+  const formHw = () => ({ platform: $("platform").value, chip: $("chip").value, ram: num("ram", 32, 4), vram: num("vram", 24, 1), gpus: Math.round(num("gpus", 1, 1)),
+    buy: $("owned").value === "buy", price: num("price", 0) });
+  function fromForm(ovOverride) {
     const r = JSON.parse(JSON.stringify(base));
     r.profile_id = presetId ? presetId + "-custom" : "my-profile";
     r.org = Object.assign({}, r.org, { type: $("org_type").value, technical_skill: $("skill").value });
@@ -413,7 +433,7 @@ footer { margin-top: 30px; font-size: 13px; color: var(--muted); display: grid; 
     r.workload = Object.assign({}, r.workload, { shape: $("shape").value, agents: { count: Math.round(num("agents", 0)), always_on: $("always").checked } });
     r.features = Object.assign({}, r.features, { web_research: $("web").checked, sso: $("sso").checked });
     r.licensing = $("commercial").checked ? Object.assign({ scale: {} }, r.licensing, { use: "commercial" }) : { use: "personal" };
-    const ov = hwOverride(hwOver || formHw());
+    const ov = ovOverride !== undefined ? ovOverride : hwOverride(formHw());
     r.hardware = Object.assign({}, r.hardware, { budget_usd: $("budget").value });
     if (ov) r.hardware.override = ov; else delete r.hardware.override;
     return r;
@@ -482,13 +502,15 @@ footer { margin-top: 30px; font-size: 13px; color: var(--muted); display: grid; 
   }
 
   // ---------- other hardware
-  function altRows(cur) {
-    return ALT_HW.map((a, i) => {
-      let rec;
-      try { rec = E.recommend(fromForm(Object.assign({ chip: "", vram: 24, gpus: 1 }, a.hw))); } catch (e) { return ""; }
-      const g = rec.plan.general, [cls, txt] = fitStatus(rec);
-      const isCur = JSON.stringify(hwOverride(Object.assign({ chip: "", vram: 24, gpus: 1 }, a.hw))) === JSON.stringify((lastRaw.hardware || {}).override || null);
-      return `<tr class="pick${isCur ? " cur" : ""}" data-alt="${i}" tabindex="0"><td>${esc(a.label)}</td><td>${g ? esc(g.name) : "–"}</td><td class="n">${g && g.tokens_per_sec_est != null ? "~" + words(g.tokens_per_sec_est) + " words/s" : "–"}</td><td><span class="pill ${cls}">${txt}</span></td></tr>`;
+  function altRows() {
+    const current = machineKey((lastRaw.hardware || {}).override || null);
+    return REF.map((m, i) => {
+      let own, bought;
+      try { own = E.recommend(fromForm(Object.assign({}, m.override))); bought = E.recommend(fromForm(Object.assign({}, m.override, { purchase_price_usd: mid(m.price_usd) }))); } catch (e) { return ""; }
+      const g = own.plan.general, [cls, txt] = fitStatus(own);
+      const costCell = bought.upgrades_required ? `–<small>too small for these needs</small>`
+        : `${usd(bought.tco.local.total_usd)}<small>buy at ~${usd(mid(m.price_usd))}${m.last_verified ? "" : " (estimate)"}</small><small>${usd(own.tco.local.total_usd)} if you have it</small>`;
+      return `<tr class="pick${machineKey(m.override) === current ? " cur" : ""}" data-alt="${i}" tabindex="0"><td>${esc(m.label)}</td><td>${g ? esc(g.name) : "–"}</td><td class="n">${g && g.tokens_per_sec_est != null ? "~" + words(g.tokens_per_sec_est) + " words/s" : "–"}</td><td><span class="pill ${cls}">${txt}</span></td><td class="n cost">${costCell}</td></tr>`;
     }).join("");
   }
 
@@ -593,8 +615,8 @@ footer { margin-top: 30px; font-size: 13px; color: var(--muted); display: grid; 
         ${rec.good_better_best.length ? `<div><h3>Spend more, get a stronger model</h3><div class="tbl"><table><thead><tr><th>Hardware</th><th>Price</th><th>Runs</th><th>Speed</th></tr></thead><tbody>${rec.good_better_best.map((o) => `<tr><td>${esc(o.name)}</td><td class="n">${usd(o.price_usd[0])}–${usd(o.price_usd[1])}</td><td>${esc(o.general_model)}</td><td class="n">${o.tokens_per_sec_est != null ? "~" + words(o.tokens_per_sec_est) + " words/s" : "–"}</td></tr>`).join("")}</tbody></table></div></div>` : ""}
         <div><h3>Included <span class="count">${rec.components.included.length}</span></h3><ul class="list split">${rec.components.included.map((c) => `<li>${esc(c.name)}<small>${esc(c.reason)}</small></li>`).join("")}</ul></div>
         <div><h3>Left out, and why <span class="count">${rec.components.excluded.length + rec.excluded_models.length}</span></h3><ul class="list out split">${rec.components.excluded.concat(rec.excluded_models).map((c) => `<li>${esc(c.name)}<small>${esc(c.reason)}</small></li>`).join("")}</ul></div>`,
-      hardware: `<div><h3>The same needs on other machines</h3><p class="hint" style="margin-bottom:10px">Each row runs your answers on a different machine. Select a row to switch to it.</p>
-          <div class="tbl"><table><thead><tr><th>Machine</th><th>Main model</th><th>Speed</th><th>Fit</th></tr></thead><tbody>${altRows()}</tbody></table></div></div>
+      hardware: `<div><h3>The same needs on other machines</h3><p class="hint" style="margin-bottom:10px">Each row runs your answers on a different machine. The three-year cost includes buying it at a typical price, electricity and upkeep; the last line is the cost if you already have one. Select a row to switch to it.</p>
+          <div class="tbl"><table><thead><tr><th>Machine</th><th>Main model</th><th>Speed</th><th>Fit</th><th>3-year cost</th></tr></thead><tbody>${altRows()}</tbody></table></div></div>
         <div><h3>If your machine has less memory than this plan needs</h3><ul class="list">
           <li>Read shorter documents at once<small>Set “Longest documents” to Normal. Conversation memory grows with document length.</small></li>
           <li>Fewer people at the same time<small>Each simultaneous conversation needs its own working memory.</small></li>
@@ -628,7 +650,7 @@ footer { margin-top: 30px; font-size: 13px; color: var(--muted); display: grid; 
         <dl class="facts" style="margin:0">
           <div class="fact"><dt>Fit</dt><dd class="fit-${cls}">${fit}<small>${p.memory_use_pct != null ? `${Math.round(p.memory_use_pct)}% of memory used, ${Math.round(100 - p.memory_use_pct)}% to spare` : ""}</small></dd></div>
           <div class="fact"><dt>Speed</dt><dd>${esc(sp)}<small>${esc(spSub)}</small></dd></div>
-          <div class="fact"><dt>Three-year cost</dt><dd>${usd(tcoLocal)}<small>${rec.procurement || rec.upgrades_required ? "including the hardware" : "on the machine you have"}</small></dd></div>
+          <div class="fact"><dt>Three-year cost</dt><dd>${usd(tcoLocal)}<small>${rec.procurement || rec.upgrades_required ? "including the hardware" : (raw.hardware.override || {}).purchase_price_usd ? "including buying this machine" : "on the machine you already have"}</small></dd></div>
         </dl>
         ${buy}
       </div>
@@ -652,9 +674,8 @@ footer { margin-top: 30px; font-size: 13px; color: var(--muted); display: grid; 
   $("out").addEventListener("keydown", (e) => { const alt = e.target.closest("[data-alt]"); if (alt && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); applyAlt(+alt.dataset.alt); } });
   function copyText(txt, ok, fail) { try { navigator.clipboard.writeText(txt).then(ok, fail); } catch (e) { fail(); } }
   function applyAlt(i) {
-    const h = ALT_HW[i].hw;
-    $("platform").value = h.platform; syncHw();
-    $("chip").value = h.chip || ""; $("ram").value = h.ram; if (h.vram) $("vram").value = h.vram; $("gpus").value = h.gpus || 1;
+    const m = REF[i];
+    ovToForm(Object.assign({}, m.override, { purchase_price_usd: mid(m.price_usd) }));
     guideOs = null; render();
   }
 
@@ -681,8 +702,18 @@ footer { margin-top: 30px; font-size: 13px; color: var(--muted); display: grid; 
   }
   $("examples").addEventListener("click", (e) => { const b = e.target.closest(".ex"); if (b) pick(b.dataset.id); });
   $("f").addEventListener("submit", (e) => e.preventDefault());
-  $("f").addEventListener("input", (e) => { if (e.target.id === "platform") syncHw(); if (e.target.id === "platform") guideOs = null; render(); });
-  $("f").addEventListener("change", (e) => { if (e.target.id === "platform") { syncHw(); guideOs = null; render(); } });
+  function onHwChange(e) {
+    const id = e.target.id;
+    if (id === "platform") { syncHw(); guideOs = null; }
+    if (id === "owned") {
+      const t = typicalPrice();
+      if ($("owned").value === "buy" && !$("price").value && t) $("price").value = mid(t);
+      syncHw();
+    }
+    if (["chip", "ram", "vram", "gpus"].includes(id)) syncPrice();
+  }
+  $("f").addEventListener("input", (e) => { onHwChange(e); render(); });
+  $("f").addEventListener("change", (e) => { if (["platform", "owned", "chip"].includes(e.target.id)) { onHwChange(e); render(); } });
 
   globalThis.AdvisorPage = { profile: () => fromForm(), recommendation: () => lastRec, pick, applyAlt };
   const saved = store.get("rsa-preset");

@@ -80,3 +80,38 @@ def test_sso_publishes_sign_in_port(tmp_path):
     svc = _compose(rec, tmp_path, "ui")
     targets = {int(p["target"]) for p in svc["caddy"]["ports"]}
     assert targets == {8443, 9443}
+
+
+# ------------------------------------------------------------------ running cost per machine
+
+def _local(override, profile="software-team-8"):
+    raw = yaml.safe_load((ROOT / "profiles" / f"{profile}.yaml").read_text())
+    raw.pop("expected")
+    raw["hardware"]["override"] = override
+    return recommend(profile_from_dict(raw), load_config())["tco"]["local"]
+
+
+def test_power_depends_on_the_machine():
+    small = _local({"platform": "linux_x86", "gpu": "nvidia", "ram_gb": 32, "vram_gb": 12, "gpu_model": "rtx_3060"})
+    big = _local({"platform": "linux_x86", "gpu": "nvidia", "ram_gb": 64, "vram_gb": 24, "gpu_model": "rtx_3090"})
+    two = _local({"platform": "linux_x86", "gpu": "nvidia", "ram_gb": 64, "vram_gb": 48, "gpu_count": 2, "gpu_model": "rtx_3090"})
+    assert small["breakdown"]["power"] < big["breakdown"]["power"] < two["breakdown"]["power"]
+
+
+def test_purchase_price_counts_when_buying():
+    ov = {"platform": "apple_silicon", "gpu": "integrated", "ram_gb": 48, "vram_gb": 0, "chip": "apple_m4_pro"}
+    owned = _local(dict(ov))
+    bought = _local(dict(ov, purchase_price_usd=2050))
+    assert owned["breakdown"]["hardware"] == 0 and bought["breakdown"]["hardware"] == 2050
+    assert bought["breakdown"]["power"] == 2 * owned["breakdown"]["power"]    # a bought machine is dedicated
+    assert "to buy this machine" in bought["hardware_note"]
+
+
+def test_reference_machines_are_valid_profiles():
+    from advisor.profile import validate_raw
+    cfg = load_config()
+    for m in cfg.pricing["reference_machines"]:
+        raw = copy.deepcopy(BASE)
+        raw["hardware"]["override"] = dict(m["override"], purchase_price_usd=sum(m["price_usd"]) / 2)
+        validate_raw(raw)
+        assert m["price_usd"][0] <= m["price_usd"][1]

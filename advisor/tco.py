@@ -17,6 +17,23 @@ DEFAULT_POWER = {"apple": (10, 90), "nvidia": (70, 420), "nvidia_unified": (30, 
                  "amd": (60, 350), "cpu": (40, 150)}
 
 
+def machine_power(hw: dict, cfg: AdvisorConfig) -> tuple[float, float]:
+    """(idle, load) watts for the machine in a plan, from config/hardware_reference.yaml."""
+    ref = cfg.hardware
+    sysw, plat, key = ref["system_power_watts"], hw["platform"], hw.get("hw_key") or ""
+    if plat in ("nvidia", "amd"):
+        n = max(int(hw.get("gpu_count") or 1), 1)
+        card = ref["gpu_power_watts"].get(key, ref["gpu_power_watts"]["amd_default"] if plat == "amd" else 300)
+        return (sysw["pc"]["idle"] + n * ref["gpu_idle_watts_per_card"], sysw["pc"]["load"] + n * card)
+    if plat == "apple":
+        cls = next((c for c in ("ultra", "max", "pro") if key.endswith(c)), "base")
+        a = sysw["apple"][cls]
+        return (a["idle"], a["load"])
+    if plat in sysw:
+        return (sysw[plat]["idle"], sysw[plat]["load"])
+    return DEFAULT_POWER.get(plat, (40, 150))
+
+
 def _stale(entry: dict, cfg: AdvisorConfig, today: dt.date) -> bool:
     lv = entry.get("last_verified")
     if not lv:
@@ -96,10 +113,16 @@ def tco(p: Profile, rec: dict, cfg: AdvisorConfig, today: dt.date | None = None)
         hw_note = f"${opt['price_usd'][0]:,}-${opt['price_usd'][1]:,} (cheapest upgrade that fits, estimate)"
         used_entries.append((f"price of {opt['name']}", opt))
     else:
-        hw_cost = 0.0
-        idle, load = DEFAULT_POWER.get(plan["hardware"]["platform"], (40, 150))
-        share = run["existing_machine_power_share"]
-        hw_note = "$0 new hardware (existing machine fits)"
+        idle, load = machine_power(plan["hardware"], cfg)
+        price = p.hardware.purchase_price_usd
+        if price:
+            hw_cost = float(price)
+            share = 1.0
+            hw_note = f"${price:,.0f} to buy this machine (your figure)"
+        else:
+            hw_cost = 0.0
+            share = run["existing_machine_power_share"]
+            hw_note = "$0 new hardware (you already have this machine)"
     hours = run["active_hours_per_day"]
     kwh = (load * hours + idle * (24 - hours)) / 1000 * 365 * 3 * share
     power = kwh * run["electricity_usd_per_kwh"]

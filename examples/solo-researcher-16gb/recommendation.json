@@ -56,6 +56,7 @@
     "hardware": {
       "platform": "apple",
       "hw_key": "apple_m2",
+      "gpu_count": 1,
       "source": "profile",
       "compute_class": "low"
     },
@@ -394,15 +395,15 @@
     "options": {
       "local": {
         "label": "Local (this recommendation)",
-        "total_usd": 97,
-        "low_usd": 97,
+        "total_usd": 46,
+        "low_usd": 46,
         "breakdown": {
           "hardware": 0,
-          "power": 97,
+          "power": 46,
           "admin_time": 0,
           "networking": 0
         },
-        "hardware_note": "$0 new hardware (existing machine fits)",
+        "hardware_note": "$0 new hardware (you already have this machine)",
         "data_goes_to": null
       },
       "api_open": {
@@ -430,20 +431,20 @@
     },
     "local": {
       "label": "Local (this recommendation)",
-      "total_usd": 97,
-      "low_usd": 97,
+      "total_usd": 46,
+      "low_usd": 46,
       "breakdown": {
         "hardware": 0,
-        "power": 97,
+        "power": 46,
         "admin_time": 0,
         "networking": 0
       },
-      "hardware_note": "$0 new hardware (existing machine fits)",
+      "hardware_note": "$0 new hardware (you already have this machine)",
       "data_goes_to": null
     },
     "cheapest": "api_open",
     "local_is_cheapest": false,
-    "verdict": "On these estimates, a hosted open-weight model API would be cheaper than local by about $59 over three years. Local is recommended here for privacy, availability, security, not price. The saving has a privacy cost: every question, the chat history sent with it and the document passages Recall finds would go to the router and whichever provider it routes to.",
+    "verdict": "On these estimates, a hosted open-weight model API would be cheaper than local by about $8 over three years. Local is recommended here for privacy, availability, security, not price. The saving has a privacy cost: every question, the chat history sent with it and the document passages Recall finds would go to the router and whichever provider it routes to.",
     "token_volume": {
       "queries": 31680.0,
       "human_in": 205920000.0,
@@ -471,7 +472,7 @@
       "High-memory machines may hold resale value while memory prices are high; resale is not counted."
     ]
   },
-  "hardware_cost": "$0 new hardware (existing machine fits)",
+  "hardware_cost": "$0 new hardware (you already have this machine)",
   "tokens": [
     "audit_log",
     "conversation_history",

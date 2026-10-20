@@ -102,6 +102,7 @@ properties:
           gpu_model: {type: string}         # e.g. rtx_4090 (extension)
           bandwidth_gbps: {type: number}    # extension
           tflops_fp16: {type: number}       # extension
+          purchase_price_usd: {type: number, minimum: 0}   # set if you would buy this machine (counts in the 3-year cost)
       budget_usd: {enum: [none, lt_1500, lt_5000, lt_10000, lt_20000, lt_150000, gt_150000]}
       deployment_preference: {enum: [same_machine, home_server, on_prem_cluster]}
 

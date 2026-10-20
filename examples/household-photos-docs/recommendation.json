@@ -60,6 +60,7 @@
     "hardware": {
       "platform": "nvidia",
       "hw_key": "rtx_3060",
+      "gpu_count": 1,
       "source": "profile",
       "compute_class": "medium"
     },
@@ -426,15 +427,15 @@
     "options": {
       "local": {
         "label": "Local (this recommendation)",
-        "total_usd": 782,
-        "low_usd": 782,
+        "total_usd": 648,
+        "low_usd": 648,
         "breakdown": {
           "hardware": 0,
-          "power": 482,
+          "power": 348,
           "admin_time": 0,
           "networking": 300
         },
-        "hardware_note": "$0 new hardware (existing machine fits)",
+        "hardware_note": "$0 new hardware (you already have this machine)",
         "data_goes_to": null
       },
       "api_open": {
@@ -462,20 +463,20 @@
     },
     "local": {
       "label": "Local (this recommendation)",
-      "total_usd": 782,
-      "low_usd": 782,
+      "total_usd": 648,
+      "low_usd": 648,
       "breakdown": {
         "hardware": 0,
-        "power": 482,
+        "power": 348,
         "admin_time": 0,
         "networking": 300
       },
-      "hardware_note": "$0 new hardware (existing machine fits)",
+      "hardware_note": "$0 new hardware (you already have this machine)",
       "data_goes_to": null
     },
     "cheapest": "api_open",
     "local_is_cheapest": false,
-    "verdict": "On these estimates, a hosted open-weight model API would be cheaper than local by about $754 over three years. Local is recommended here for privacy, security, availability, not price. The saving has a privacy cost: every question, the chat history sent with it and the document passages Recall finds would go to the router and whichever provider it routes to. For this profile that is not just a preference: its regulated data makes it a compliance question.",
+    "verdict": "On these estimates, a hosted open-weight model API would be cheaper than local by about $620 over three years. Local is recommended here for privacy, security, availability, not price. The saving has a privacy cost: every question, the chat history sent with it and the document passages Recall finds would go to the router and whichever provider it routes to. For this profile that is not just a preference: its regulated data makes it a compliance question.",
     "token_volume": {
       "queries": 23760.0,
       "human_in": 154440000.0,
@@ -503,7 +504,7 @@
       "High-memory machines may hold resale value while memory prices are high; resale is not counted."
     ]
   },
-  "hardware_cost": "$0 new hardware (existing machine fits)",
+  "hardware_cost": "$0 new hardware (you already have this machine)",
   "tokens": [
     "audit_log",
     "collection_acls",

@@ -53,6 +53,7 @@
       ram_gb: +(o.ram_gb || 0), vram_gb: +(o.vram_gb || 0), gpu_count: +(o.gpu_count || 1),
       bandwidth_gbps: o.bandwidth_gbps || null, tflops_fp16: o.tflops_fp16 || null,
       free_disk_gb: o.free_disk_gb == null ? null : o.free_disk_gb, usable_gb: null, source: "profile",
+      purchase_price_usd: o.purchase_price_usd == null ? null : o.purchase_price_usd,
     };
   }
 
@@ -334,7 +335,7 @@
       const acceptable = !!general && general.total_params_b >= minParams;
       if (general && !acceptable) notes.push(`Best fitting model (${general.name}) is below the ${minParams}B minimum for tier ${tier}.`);
       return { runtime: engine, runtime_name: rt.name, runtime_mode: rt.mode, runtime_alternatives: rt.alternatives, runtime_why: rt.why,
-        hardware: { platform: hw.platform, hw_key: hw.hw_key, source: hw.source, compute_class: S.computeClass(hw) },
+        hardware: { platform: hw.platform, hw_key: hw.hw_key, gpu_count: hw.gpu_count, source: hw.source, compute_class: S.computeClass(hw) },
         usable_memory_gb: usable.gb, usable_memory_basis: usable.basis, memory_budget_gb: pyRound(budget, 2), memory_used_gb: pyRound(used, 2),
         memory_use_pct: usable.gb ? pyRound(100 * used / usable.gb, 1) : null, bandwidth_gbps: hw.bandwidth_gbps, tflops_fp16: hw.tflops_fp16,
         tokens_per_sec_target: tpsTarget, ttft_s_est: ttft, general, specialists, aux: aux.concat(fast ? [fast] : []), rejected, acceptable, notes };
@@ -466,6 +467,18 @@
       return order.map((b, i) => ({ benefit: b, weight: order.length - i, text: text[b] }));
     }
 
+    function machinePower(hw) {
+      const ref = D.hardware, sysw = ref.system_power_watts, plat = hw.platform, key = hw.hw_key || "";
+      if (plat === "nvidia" || plat === "amd") {
+        const n = Math.max(+(hw.gpu_count || 1), 1);
+        const card = has(ref.gpu_power_watts, key) ? ref.gpu_power_watts[key] : (plat === "amd" ? ref.gpu_power_watts.amd_default : 300);
+        return [sysw.pc.idle + n * ref.gpu_idle_watts_per_card, sysw.pc.load + n * card];
+      }
+      if (plat === "apple") { const cls = ["ultra", "max", "pro"].find((c) => key.endsWith(c)) || "base"; return [sysw.apple[cls].idle, sysw.apple[cls].load]; }
+      if (has(sysw, plat)) return [sysw[plat].idle, sysw[plat].load];
+      return { apple: [10, 90], nvidia: [70, 420], nvidia_unified: [30, 240], amd_unified: [15, 160], amd: [60, 350], cpu: [40, 150] }[plat] || [40, 150];
+    }
+
     function tco(p, rec) {
       const pr = D.pricing, run = pr.running, tier = rec.tier, plan = rec.plan, MONTHS = 36;
       const POWER = { apple: [10, 90], nvidia: [70, 420], nvidia_unified: [30, 240], amd_unified: [15, 160], amd: [60, 350], cpu: [40, 150] };
@@ -473,7 +486,12 @@
       if (rec.procurement) opt = pr.hardware_options.find((o) => o.id === rec.procurement.id);
       else if (rec.upgrades_required && rec.upgrade_options.length) opt = pr.hardware_options.find((o) => o.id === rec.upgrade_options[0].id);
       if (opt) { hwCost = (opt.price_usd[0] + opt.price_usd[1]) / 2; idle = opt.power_watts.idle; load = opt.power_watts.load; share = 1; note = `$${opt.price_usd[0].toLocaleString("en-US")}-$${opt.price_usd[1].toLocaleString("en-US")} ${rec.procurement ? "for " + opt.name : "(cheapest upgrade that fits, estimate)"}${rec.procurement ? " (estimate)" : ""}`; }
-      else { hwCost = 0; [idle, load] = POWER[plan.hardware.platform] || [40, 150]; share = run.existing_machine_power_share; note = "$0 new hardware (existing machine fits)"; }
+      else {
+        [idle, load] = machinePower(plan.hardware);
+        const price = p.hardware.purchase_price_usd;
+        if (price) { hwCost = +price; share = 1; note = `$${Math.round(price).toLocaleString("en-US")} to buy this machine (your figure)`; }
+        else { hwCost = 0; share = run.existing_machine_power_share; note = "$0 new hardware (you already have this machine)"; }
+      }
       const hours = run.active_hours_per_day, kwh = (load * hours + idle * (24 - hours)) / 1000 * 365 * 3 * share, power = kwh * run.electricity_usd_per_kwh;
       const rate = run.admin_rate_usd_per_hour[p.org_type], admin = run.admin_hours_per_month[tier] * rate * MONTHS, network = run.networking_one_time_usd[tier];
       const u = pr.usage_assumptions, queries = p.users * p.queries_per_user_per_day * u.working_days_per_month * MONTHS;

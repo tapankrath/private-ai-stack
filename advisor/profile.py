@@ -37,6 +37,7 @@ class Hardware:
     tflops_fp16: float | None = None
     free_disk_gb: float | None = None
     usable_gb: float | None = None   # set for procurement options (memory available to models)
+    purchase_price_usd: float | None = None   # set when this machine still has to be bought
     source: str = "profile"          # profile | detected | procurement option id
 
 
@@ -132,6 +133,7 @@ def normalize_hardware(override: dict, source: str = "profile") -> Hardware:
         ram_gb=float(override.get("ram_gb", 0)), vram_gb=float(override.get("vram_gb", 0)),
         gpu_count=int(override.get("gpu_count", 1)), bandwidth_gbps=override.get("bandwidth_gbps"),
         tflops_fp16=override.get("tflops_fp16"), free_disk_gb=override.get("free_disk_gb"), source=source,
+        purchase_price_usd=override.get("purchase_price_usd"),
     )
 
 

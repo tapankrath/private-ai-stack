@@ -434,7 +434,7 @@ def _plan(p: Profile, hw: Hardware, cfg: AdvisorConfig, enabled: dict, tier: int
     return {
         "runtime": engine, "runtime_name": rt["name"], "runtime_mode": rt["mode"],
         "runtime_alternatives": rt["alternatives"], "runtime_why": rt["why"],
-        "hardware": {"platform": hw.platform, "hw_key": hw.hw_key, "source": hw.source,
+        "hardware": {"platform": hw.platform, "hw_key": hw.hw_key, "gpu_count": hw.gpu_count, "source": hw.source,
                      "compute_class": sizing.compute_class(hw, cfg)},
         "usable_memory_gb": usable.gb, "usable_memory_basis": usable.basis,
         "memory_budget_gb": round(budget, 2), "memory_used_gb": round(used, 2),

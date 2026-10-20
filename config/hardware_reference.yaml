@@ -107,3 +107,34 @@ unified_usable_fraction:
   apple_above_36gb: 0.75
   nvidia_unified: 0.85
   amd_unified: 0.75
+
+# ------------------------------------------------------------------ power (running-cost estimates)
+# Watts. A GPU PC = system_power.pc + one entry per card (board power at load, idle per card).
+gpu_power_watts:
+  rtx_3060: 170
+  rtx_3080: 320
+  rtx_3090: 350
+  rtx_4060_ti: 160
+  rtx_4070: 200
+  rtx_4080: 320
+  rtx_4090: 450
+  rtx_5090: 575
+  rtx_a4000: 140
+  rtx_a5000: 230
+  rtx_a6000: 300
+  rtx_6000_ada: 300
+  l40s: 350
+  a100_80gb: 300
+  h100_pcie: 350
+  amd_default: 300             # AMD cards without a listed model
+gpu_idle_watts_per_card: 15
+system_power_watts:
+  pc: {idle: 45, load: 120}            # the rest of a desktop PC
+  cpu: {idle: 40, load: 150}           # a PC without a graphics card
+  apple:                               # whole Mac, by chip class
+    base: {idle: 7, load: 40}
+    pro: {idle: 10, load: 70}
+    max: {idle: 15, load: 130}
+    ultra: {idle: 25, load: 220}
+  nvidia_unified: {idle: 30, load: 240}
+  amd_unified: {idle: 15, load: 160}
