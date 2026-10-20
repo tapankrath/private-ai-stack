@@ -1,0 +1,114 @@
+# Inference engines and the rules for choosing one.
+# Status, licenses and claims change quickly: entries are dated examples (Oct 2026).
+
+schema_version: 1
+
+engines:
+  ollama:
+    name: Ollama
+    open_source: true
+    license: MIT
+    built_on: llama.cpp (plus an MLX backend on Apple Silicon for some models)
+    platforms: [apple, nvidia, amd, cpu, nvidia_unified, amd_unified]
+    multi_user: light            # parallel requests, no continuous batching at scale
+    ease: easiest
+    status: active
+    notes: "Easy model switching. Never use ':cloud' model tags: they run on Ollama's servers and send prompts off the machine."
+  llama_cpp:
+    name: llama.cpp server
+    open_source: true
+    license: MIT
+    platforms: [apple, nvidia, amd, cpu, nvidia_unified, amd_unified]
+    multi_user: light
+    ease: moderate
+    status: active
+    notes: "Portable GGUF runtime; the most hardware coverage (CUDA, Metal, Vulkan, ROCm, CPU)."
+  mlx:
+    name: MLX (mlx-lm server)
+    open_source: true
+    license: MIT
+    platforms: [apple]
+    multi_user: light
+    ease: moderate
+    status: active
+    notes: "Most direct performance path on Apple Silicon."
+  vllm:
+    name: vLLM
+    open_source: true
+    license: Apache-2.0
+    platforms: [nvidia, nvidia_unified]
+    multi_user: high             # continuous batching, paged attention
+    ease: it_admin
+    status: active
+    notes: "Standard multi-user server; much higher aggregate throughput."
+  sglang:
+    name: SGLang
+    open_source: true
+    license: Apache-2.0
+    platforms: [nvidia, nvidia_unified]
+    multi_user: high
+    ease: it_admin
+    status: active
+    notes: "Alternative to vLLM with strong prefix caching for RAG and agent workloads."
+  tensorrt_llm:
+    name: TensorRT-LLM
+    open_source: true
+    license: Apache-2.0
+    platforms: [nvidia]
+    multi_user: high
+    ease: expert
+    status: active
+    notes: "Needed for some NVIDIA-specific formats (e.g. NVFP4). Higher setup cost; not a default."
+  lm_studio:
+    name: LM Studio
+    open_source: false           # FREE BUT CLOSED SOURCE: conflicts with principle 7
+    license: proprietary (free to use)
+    platforms: [apple, nvidia, amd, cpu]
+    multi_user: none
+    ease: easiest
+    status: active
+    requires: accept_closed_source
+    notes: "Easiest desktop start (llama.cpp and MLX backends). Only if the user accepts closed-source software."
+  tensorfold:
+    name: TensorFold
+    open_source: true
+    license: MIT
+    platforms: [apple, nvidia, nvidia_unified]
+    multi_user: light
+    ease: moderate
+    status: experimental
+    requires: allow_experimental
+    notes: "Exact speculative decoding; published 2026. Speedups are self-reported, not independently verified. Never a default."
+  tgi:
+    name: Hugging Face Text Generation Inference
+    open_source: true
+    license: Apache-2.0
+    platforms: [nvidia]
+    multi_user: high
+    status: maintenance          # README: "now in maintenance mode"; HF recommends vLLM, SGLang, llama.cpp, MLX
+    never_recommend: true
+
+# Selection rules, first match wins. `sessions` = peak human users + agent sessions.
+rules:
+  - when: {platform: [nvidia, nvidia_unified], min_sessions: 8}
+    choose: vllm
+    alternatives: [sglang]
+    why: "8+ concurrent sessions on NVIDIA: continuous batching gives far higher throughput."
+  - when: {platform: [apple], skill: [non_technical]}
+    choose: ollama
+    mode: native
+    alternatives: [mlx]
+    why: "Simplest install on a Mac; Docker on macOS cannot use the Apple GPU, so Ollama runs natively."
+  - when: {platform: [apple]}
+    choose: ollama
+    mode: native
+    alternatives: [mlx, llama_cpp]
+    why: "Ollama for easy model management; MLX is the faster option for power users."
+  - when: {skill: [non_technical]}
+    choose: ollama
+    alternatives: [llama_cpp]
+    why: "Non-technical owners: Ollama + Open WebUI is the easiest stack to run and update."
+  - when: {}
+    choose: ollama
+    alternatives: [llama_cpp, vllm]
+    why: "Simple model management; enough for this concurrency."

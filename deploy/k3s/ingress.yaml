@@ -1,0 +1,12 @@
+# LAN-only ingress (bind the k3s Traefik service to an internal address). Never expose publicly.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata: {name: private-ai}
+spec:
+  tls: [{hosts: [ai.internal.example], secretName: private-ai-tls}]
+  rules:
+    - host: ai.internal.example
+      http:
+        paths:
+          - {path: /gateway, pathType: Prefix, backend: {service: {name: gateway, port: {number: 8080}}}}
+          - {path: /, pathType: Prefix, backend: {service: {name: open-webui, port: {number: 8080}}}}

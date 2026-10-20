@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: open-webui, labels: {app: open-webui}}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: open-webui}}
+  template:
+    metadata: {labels: {app: open-webui}}
+    spec:
+      automountServiceAccountToken: false
+      securityContext: {seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: open-webui
+          image: ghcr.io/open-webui/open-webui:PIN_ME
+          ports: [{containerPort: 8080}]
+          env:
+            - {name: ENABLE_OLLAMA_API, value: "false"}
+            - {name: ENABLE_OPENAI_API, value: "true"}
+            - {name: OPENAI_API_BASE_URL, value: "http://gateway:8080/v1"}
+            - {name: OPENAI_API_KEY, valueFrom: {secretKeyRef: {name: gateway-secrets, key: gateway_key}}}
+            - {name: ENABLE_FORWARD_USER_INFO_HEADERS, value: "true"}
+            - {name: OFFLINE_MODE, value: "true"}
+            - {name: ANONYMIZED_TELEMETRY, value: "false"}
+            - {name: DO_NOT_TRACK, value: "true"}
+            - {name: SCARF_NO_ANALYTICS, value: "true"}
+            - {name: ENABLE_SIGNUP, value: "false"}
+            - {name: ENABLE_WEB_SEARCH, value: "false"}
+          securityContext: {allowPrivilegeEscalation: false, capabilities: {drop: [ALL]}}
+          volumeMounts: [{name: data, mountPath: /app/backend/data}]
+      volumes: [{name: data, persistentVolumeClaim: {claimName: open-webui-data}}]
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: open-webui-data}
+spec: {accessModes: [ReadWriteOnce], resources: {requests: {storage: 20Gi}}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: open-webui}
+spec: {selector: {app: open-webui}, ports: [{port: 8080, targetPort: 8080}]}

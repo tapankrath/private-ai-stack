@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: vllm, labels: {app: vllm}}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector: {matchLabels: {app: vllm}}
+  template:
+    metadata: {labels: {app: vllm}}
+    spec:
+      automountServiceAccountToken: false
+      securityContext: {seccompProfile: {type: RuntimeDefault}}
+      nodeSelector: {nvidia.com/gpu.present: "true"}
+      containers:
+        - name: vllm
+          image: vllm/vllm-openai:PIN_ME
+          args: ["--model=$(VLLM_MODEL)", "--max-model-len=$(VLLM_MAX_MODEL_LEN)", "--gpu-memory-utilization=0.85"]
+          envFrom: [{configMapRef: {name: gateway-env}}]
+          env:
+            - {name: HF_HUB_OFFLINE, value: "1"}
+            - {name: VLLM_NO_USAGE_STATS, value: "1"}
+            - {name: DO_NOT_TRACK, value: "1"}
+          ports: [{containerPort: 8000}]
+          resources: {limits: {nvidia.com/gpu: 1}}
+          securityContext: {allowPrivilegeEscalation: false, capabilities: {drop: [ALL]}}
+          readinessProbe: {httpGet: {path: /health, port: 8000}, periodSeconds: 15}
+          livenessProbe: {httpGet: {path: /health, port: 8000}, periodSeconds: 30, failureThreshold: 4, initialDelaySeconds: 300}
+          volumeMounts: [{name: hf, mountPath: /root/.cache/huggingface}, {name: shm, mountPath: /dev/shm}]
+      volumes:
+        - {name: hf, persistentVolumeClaim: {claimName: hf-cache}}
+        - {name: shm, emptyDir: {medium: Memory, sizeLimit: 8Gi}}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: hf-cache}
+spec: {accessModes: [ReadWriteOnce], resources: {requests: {storage: 300Gi}}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: vllm}
+spec: {selector: {app: vllm}, ports: [{port: 8000, targetPort: 8000}]}

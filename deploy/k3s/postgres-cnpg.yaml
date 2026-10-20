@@ -1,0 +1,17 @@
+# Requires the CloudNativePG operator (https://cloudnative-pg.io). Gives HA, PITR backups and pgvector
+# via the official PostGIS/pgvector-enabled image you pin. The gateway_app role is created by
+# the post-init SQL and does NOT own tables (row-level security applies to it).
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata: {name: pg}
+spec:
+  instances: 2
+  imageName: ghcr.io/cloudnative-pg/postgresql:16    # PIN a digest; must include pgvector
+  storage: {size: 200Gi}
+  bootstrap:
+    initdb:
+      database: gateway
+      owner: gateway_owner
+      postInitApplicationSQL:
+        - CREATE EXTENSION IF NOT EXISTS vector;
+        - CREATE ROLE gateway_app LOGIN;    # set its password from a Secret after bootstrap

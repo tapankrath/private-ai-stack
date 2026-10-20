@@ -1,0 +1,1018 @@
+# Model catalog used by the Right-Size Advisor.
+#
+# IMPORTANT: every entry here is an EXAMPLE seeded by hand. Open-weight models are
+# released and relicensed often. Before relying on an entry:
+#   1. run `scripts/update-catalog --allow-egress` (an explicit, logged egress step) to
+#      refresh license and metadata from Hugging Face model cards, and
+#   2. read the license yourself. `last_verified: null` means nobody has checked it yet.
+#
+# MEMORY uses TOTAL parameters; SPEED uses ACTIVE parameters (MoE vs dense).
+# An MoE model with ~35B total / ~3B active needs the memory of a ~35B dense model but
+# generates tokens at roughly the speed of a ~3B one.
+#
+# Open-weight is not the same as open source:
+#   open_weight: weights are downloadable.   osi_open_source: license meets the OSD.
+# commercial_triggers: license conditions that apply at scale. blocking: true triggers stop
+# the model being selected for commercial use until licensing.acknowledged_triggers lists them.
+#
+# Memory numbers are computed by the advisor, not stored here:
+#   weights_gb   = total_params_b * bits_per_weight(quant) / 8
+#   kv_gb        = kv_bytes_per_token * context_tokens * concurrent_sessions / 1e9
+#   kv_bytes_per_token (fp16) = 2 (K and V) * kv_layers * kv_heads * head_dim * 2 bytes
+# `attention` fields come from each model's config.json. When unpublished, the entry carries
+# kv_bytes_per_token_est and a kv_note instead.
+# Auxiliary models (embeddings, rerankers, STT) store a fixed memory_gb instead.
+#
+# commercial_use: yes | no | conditional (conditional = allowed with terms; read them)
+
+schema_version: 2
+quantizations:
+  Q4_K_M: 4.85
+  Q5_K_M: 5.7
+  Q8_0: 8.5
+  AWQ: 4.6
+  FP8: 8.5
+  FP16: 16.0
+runtime_overhead_gb: 0.6
+models:
+- id: qwen3-4b
+  name: Qwen3 4B
+  family: qwen3
+  provider: Alibaba Qwen
+  role: general
+  architecture: dense
+  total_params_b: 4.0
+  active_params_b: 4.0
+  attention:
+    kv_layers: 36
+    kv_heads: 8
+    head_dim: 128
+  context_max: 32768
+  quality_rank: 20
+  capabilities:
+  - chat
+  - multilingual
+  - tool_calling
+  - long_context
+  quantizations:
+  - Q4_K_M
+  - Q8_0
+  - FP16
+  license: Apache-2.0
+  open_weight: true
+  osi_open_source: true
+  commercial_use: 'yes'
+  commercial_triggers: []
+  allows_fine_tuning: 'yes'
+  allows_distillation: 'yes'
+  runtimes:
+    ollama: qwen3:4b
+    hf: Qwen/Qwen3-4B
+  example: true
+  last_verified: null
+- id: llama3.1-8b
+  name: Llama 3.1 8B Instruct
+  family: llama
+  provider: Meta
+  role: general
+  architecture: dense
+  total_params_b: 8.0
+  active_params_b: 8.0
+  attention:
+    kv_layers: 32
+    kv_heads: 8
+    head_dim: 128
+  context_max: 131072
+  quality_rank: 28
+  capabilities:
+  - chat
+  - tool_calling
+  - long_context
+  - multilingual
+  quantizations:
+  - Q4_K_M
+  - Q5_K_M
+  - Q8_0
+  - FP16
+  license: Llama 3.1 Community License
+  open_weight: true
+  osi_open_source: false
+  commercial_use: conditional
+  license_conditions: Over 700M monthly active users needs a separate license; attribution and acceptable-use policy
+    apply.
+  commercial_triggers: &id001
+  - id: llama-700m-mau
+    type: mau_over
+    threshold: 700000000
+    blocking: true
+    effect: Separate license from Meta required above 700M monthly active users.
+  - id: llama-attribution
+    type: attribution
+    blocking: false
+    effect: Display 'Built with Llama' and include the license with any distribution.
+  allows_fine_tuning: conditional
+  allows_distillation: conditional
+  runtimes:
+    ollama: llama3.1:8b
+    hf: meta-llama/Llama-3.1-8B-Instruct
+  example: true
+  last_verified: null
+- id: qwen3-8b
+  name: Qwen3 8B
+  family: qwen3
+  provider: Alibaba Qwen
+  role: general
+  architecture: dense
+  total_params_b: 8.2
+  active_params_b: 8.2
+  attention:
+    kv_layers: 36
+    kv_heads: 8
+    head_dim: 128
+  context_max: 32768
+  quality_rank: 32
+  capabilities:
+  - chat
+  - multilingual
+  - tool_calling
+  - long_context
+  quantizations:
+  - Q4_K_M
+  - Q5_K_M
+  - Q8_0
+  - FP16
+  license: Apache-2.0
+  open_weight: true
+  osi_open_source: true
+  commercial_use: 'yes'
+  commercial_triggers: []
+  allows_fine_tuning: 'yes'
+  allows_distillation: 'yes'
+  runtimes:
+    ollama: qwen3:8b
+    hf: Qwen/Qwen3-8B
+  example: true
+  last_verified: null
+- id: phi4-14b
+  name: Phi-4 14B
+  family: phi
+  provider: Microsoft
+  role: general
+  architecture: dense
+  total_params_b: 14.7
+  active_params_b: 14.7
+  attention:
+    kv_layers: 40
+    kv_heads: 10
+    head_dim: 128
+  context_max: 16384
+  quality_rank: 40
+  capabilities:
+  - chat
+  quantizations:
+  - Q4_K_M
+  - Q5_K_M
+  - Q8_0
+  license: MIT
+  open_weight: true
+  osi_open_source: true
+  commercial_use: 'yes'
+  commercial_triggers: []
+  allows_fine_tuning: 'yes'
+  allows_distillation: 'yes'
+  runtimes:
+    ollama: phi4:14b
+    hf: microsoft/phi-4
+  example: true
+  last_verified: null
+- id: qwen3-14b
+  name: Qwen3 14B
+  family: qwen3
+  provider: Alibaba Qwen
+  role: general
+  architecture: dense
+  total_params_b: 14.8
+  active_params_b: 14.8
+  attention:
+    kv_layers: 40
+    kv_heads: 8
+    head_dim: 128
+  context_max: 32768
+  quality_rank: 44
+  capabilities:
+  - chat
+  - multilingual
+  - tool_calling
+  - long_context
+  quantizations:
+  - Q4_K_M
+  - Q5_K_M
+  - Q8_0
+  - AWQ
+  - FP8
+  license: Apache-2.0
+  open_weight: true
+  osi_open_source: true
+  commercial_use: 'yes'
+  commercial_triggers: []
+  allows_fine_tuning: 'yes'
+  allows_distillation: 'yes'
+  runtimes:
+    ollama: qwen3:14b
+    hf: Qwen/Qwen3-14B
+    vllm: Qwen/Qwen3-14B
+  example: true
+  last_verified: null
+- id: mistral-small-24b
+  name: Mistral Small 24B Instruct
+  family: mistral
+  provider: Mistral AI
+  role: general
+  architecture: dense
+  total_params_b: 23.6
+  active_params_b: 23.6
+  attention:
+    kv_layers: 40
+    kv_heads: 8
+    head_dim: 128
+  context_max: 32768
+  quality_rank: 50
+  capabilities:
+  - chat
+  - multilingual
+  - tool_calling
+  - long_context
+  quantizations:
+  - Q4_K_M
+  - Q5_K_M
+  - Q8_0
+  - AWQ
+  - FP8
+  license: Apache-2.0
+  open_weight: true
+  osi_open_source: true
+  commercial_use: 'yes'
+  commercial_triggers: []
+  allows_fine_tuning: 'yes'
+  allows_distillation: 'yes'
+  runtimes:
+    ollama: mistral-small:24b
+    hf: mistralai/Mistral-Small-24B-Instruct-2501
+    vllm: mistralai/Mistral-Small-24B-Instruct-2501
+  example: true
+  last_verified: null
+- id: qwen3-30b-a3b
+  name: Qwen3 30B-A3B (mixture of experts)
+  family: qwen3
+  provider: Alibaba Qwen
+  role: general
+  architecture: moe
+  total_params_b: 30.5
+  active_params_b: 3.3
+  attention:
+    kv_layers: 48
+    kv_heads: 4
+    head_dim: 128
+  context_max: 32768
+  quality_rank: 52
+  capabilities:
+  - chat
+  - multilingual
+  - tool_calling
+  - long_context
+  quantizations:
+  - Q4_K_M
+  - Q8_0
+  - AWQ
+  - FP8
+  license: Apache-2.0
+  open_weight: true
+  osi_open_source: true
+  commercial_use: 'yes'
+  commercial_triggers: []
+  allows_fine_tuning: 'yes'
+  allows_distillation: 'yes'
+  runtimes:
+    ollama: qwen3:30b-a3b
+    hf: Qwen/Qwen3-30B-A3B
+    vllm: Qwen/Qwen3-30B-A3B
+  example: true
+  last_verified: null
+- id: qwen3-32b
+  name: Qwen3 32B
+  family: qwen3
+  provider: Alibaba Qwen
+  role: general
+  architecture: dense
+  total_params_b: 32.8
+  active_params_b: 32.8
+  attention:
+    kv_layers: 64
+    kv_heads: 8
+    head_dim: 128
+  context_max: 32768
+  quality_rank: 60
+  capabilities:
+  - chat
+  - multilingual
+  - tool_calling
+  - long_context
+  quantizations:
+  - Q4_K_M
+  - Q5_K_M
+  - Q8_0
+  - AWQ
+  - FP8
+  license: Apache-2.0
+  open_weight: true
+  osi_open_source: true
+  commercial_use: 'yes'
+  commercial_triggers: []
+  allows_fine_tuning: 'yes'
+  allows_distillation: 'yes'
+  runtimes:
+    ollama: qwen3:32b
+    hf: Qwen/Qwen3-32B
+    vllm: Qwen/Qwen3-32B
+  example: true
+  last_verified: null
+- id: llama3.3-70b
+  name: Llama 3.3 70B Instruct
+  family: llama
+  provider: Meta
+  role: general
+  architecture: dense
+  total_params_b: 70.6
+  active_params_b: 70.6
+  attention:
+    kv_layers: 80
+    kv_heads: 8
+    head_dim: 128
+  context_max: 131072
+  quality_rank: 70
+  capabilities:
+  - chat
+  - multilingual
+  - tool_calling
+  - long_context
+  quantizations:
+  - Q4_K_M
+  - Q5_K_M
+  - Q8_0
+  - AWQ
+  - FP8
+  license: Llama 3.3 Community License
+  open_weight: true
+  osi_open_source: false
+  commercial_use: conditional
+  license_conditions: Over 700M monthly active users needs a separate license; attribution and acceptable-use policy
+    apply.
+  commercial_triggers: *id001
+  allows_fine_tuning: conditional
+  allows_distillation: conditional
+  runtimes:
+    ollama: llama3.3:70b
+    hf: meta-llama/Llama-3.3-70B-Instruct
+    vllm: meta-llama/Llama-3.3-70B-Instruct
+  example: true
+  last_verified: null
+- id: qwen3.6-35b-a3b
+  name: Qwen3.6 35B-A3B
+  family: qwen3.6
+  provider: Alibaba Qwen
+  role: general
+  architecture: moe
+  total_params_b: 35.0
+  active_params_b: 3.0
+  attention:
+    kv_layers: 40
+    kv_heads: 2
+    head_dim: 256
+    note: 'Hybrid attention (~75% linear Gated DeltaNet). All 40 layers counted: conservative; real KV is likely
+      ~4x smaller.'
+  context_max: 262144
+  quality_rank: 68
+  capabilities:
+  - chat
+  - multilingual
+  - tool_calling
+  - long_context
+  - vision
+  quantizations:
+  - Q4_K_M
+  - Q8_0
+  - AWQ
+  - FP8
+  license: Apache-2.0
+  open_weight: true
+  osi_open_source: true
+  commercial_use: 'yes'
+  commercial_triggers: []
+  allows_fine_tuning: 'yes'
+  allows_distillation: 'yes'
+  runtimes:
+    ollama: qwen3.6:35b
+    hf: Qwen/Qwen3.6-35B-A3B
+    vllm: Qwen/Qwen3.6-35B-A3B
+  example: true
+  last_verified: '2026-10-19'
+  verified_fields:
+  - license
+  - total_params_b
+  - active_params_b
+  - context_max
+  - ollama tag (third-party listing)
+  sources:
+  - https://huggingface.co/basecompute/Qwen3.6-35B-A3B
+  - https://apxml.com/models/qwen36-35b-a3b
+  - https://www.morphllm.com/best-ollama-models
+- id: gemma4-26b-a4b
+  name: Gemma 4 26B A4B
+  family: gemma4
+  provider: Google
+  role: general
+  architecture: moe
+  total_params_b: 25.2
+  active_params_b: 3.8
+  kv_bytes_per_token_est: 122880
+  kv_note: KV heads not published on the model card; estimate assumes 30 layers x 8 KV heads x 128 dim (sliding-window
+    layers make real use lower).
+  context_max: 262144
+  quality_rank: 58
+  capabilities:
+  - chat
+  - multilingual
+  - tool_calling
+  - long_context
+  - vision
+  quantizations:
+  - Q4_K_M
+  - Q8_0
+  - AWQ
+  - FP8
+  license: Apache-2.0
+  open_weight: true
+  osi_open_source: true
+  commercial_use: 'yes'
+  commercial_triggers: []
+  allows_fine_tuning: 'yes'
+  allows_distillation: 'yes'
+  runtimes:
+    ollama: gemma4:26b
+    hf: google/gemma-4-26B-A4B
+    vllm: google/gemma-4-26B-A4B
+  example: true
+  last_verified: '2026-10-19'
+  verified_fields:
+  - license
+  - architecture
+  - total_params_b
+  - active_params_b
+  - context_max
+  - ollama tag (third-party listing)
+  sources:
+  - https://huggingface.co/google/Gemma-4-31B
+  - https://www.morphllm.com/best-ollama-models
+- id: gemma4-31b
+  name: Gemma 4 31B
+  family: gemma4
+  provider: Google
+  role: general
+  architecture: dense
+  total_params_b: 30.7
+  active_params_b: 30.7
+  kv_bytes_per_token_est: 245760
+  kv_note: 60 layers alternating sliding-window (1024) and global attention; KV heads not published. Estimate assumes
+    30 global layers x 16 KV heads x 128 dim.
+  context_max: 262144
+  quality_rank: 64
+  capabilities:
+  - chat
+  - multilingual
+  - tool_calling
+  - long_context
+  - vision
+  quantizations:
+  - Q4_K_M
+  - Q8_0
+  - AWQ
+  - FP8
+  license: Apache-2.0
+  open_weight: true
+  osi_open_source: true
+  commercial_use: 'yes'
+  commercial_triggers: []
+  allows_fine_tuning: 'yes'
+  allows_distillation: 'yes'
+  runtimes:
+    ollama: gemma4:31b
+    hf: google/gemma-4-31B
+    vllm: google/gemma-4-31B
+  example: true
+  last_verified: '2026-10-19'
+  verified_fields:
+  - license
+  - architecture
+  - total_params_b
+  - context_max
+  - ollama tag (third-party listing)
+  sources:
+  - https://huggingface.co/google/Gemma-4-31B
+  - https://opensource.googleblog.com/2026/03/gemma-4-expanding-the-gemmaverse-with-apache-20.html
+- id: qwen3.8-flash-next
+  name: Qwen3.8 Flash-Next
+  family: qwen3.8
+  provider: Alibaba Qwen
+  role: general
+  architecture: moe
+  total_params_b: 180.0
+  active_params_b: 6.0
+  params_note: 125B MoE backbone + 51B n-gram embedding table + 4B MTP module; the full ~180B checkpoint must be
+    in memory.
+  kv_bytes_per_token_est: 49152
+  kv_note: 'Hybrid attention: 12 of 48 layers are full attention. Estimate only.'
+  context_max: 262144
+  quality_rank: 80
+  capabilities:
+  - chat
+  - multilingual
+  - tool_calling
+  - long_context
+  quantizations:
+  - Q4_K_M
+  - Q8_0
+  - FP8
+  license: Qwen Community License 1.0
+  open_weight: true
+  osi_open_source: false
+  commercial_use: conditional
+  license_conditions: Commercial products may need a separate commercial license from Qwen; name display above 100M
+    MAU or US$20M monthly revenue.
+  commercial_triggers:
+  - id: qwen-community-commercial-review
+    type: commercial_use
+    blocking: true
+    effect: Commercial products built on the weights may need a separate commercial license from Qwen. Record an
+      acknowledgement after checking.
+  - id: qwen-community-attribution
+    type: mau_or_monthly_revenue_over
+    threshold_mau: 100000000
+    threshold_monthly_revenue_usd: 20000000
+    blocking: false
+    effect: Prominently display the model name above 100M MAU or US$20M monthly revenue.
+  allows_fine_tuning: conditional
+  allows_distillation: conditional
+  runtimes:
+    ollama: qwen3.8-flash-next:125b-mlx
+    hf: Qwen/Qwen3.8-Flash-Next
+    vllm: Qwen/Qwen3.8-Flash-Next-FP8
+    mlx: qwen3.8-flash-next:125b-mlx
+  runtime_notes: The listed Ollama tag is an MLX build (Apple Silicon only).
+  example: true
+  last_verified: '2026-10-19'
+  verified_fields:
+  - license
+  - total_params_b
+  - active_params_b
+  - context_max
+  - ollama tag (third-party listing)
+  sources:
+  - https://intuitionlabs.ai/articles/qwen3-8-flash-next-architecture-memory
+  - https://www.morphllm.com/best-ollama-models
+- id: glm-5.3-flash
+  name: GLM-5.3-Flash
+  family: glm
+  provider: Z.ai
+  role: general
+  architecture: moe
+  total_params_b: 321.3
+  active_params_b: 18.0
+  kv_bytes_per_token_est: 196608
+  kv_note: Not published; placeholder estimate.
+  context_max: 1000000
+  quality_rank: 85
+  capabilities:
+  - chat
+  - multilingual
+  - tool_calling
+  - long_context
+  quantizations:
+  - Q4_K_M
+  - FP8
+  license: MIT
+  open_weight: true
+  osi_open_source: true
+  commercial_use: 'yes'
+  commercial_triggers: []
+  allows_fine_tuning: 'yes'
+  allows_distillation: 'yes'
+  runtimes:
+    hf: zai-org/GLM-5.3-Flash
+    vllm: zai-org/GLM-5.3-Flash
+  runtime_notes: Ollama lists glm-5.3-flash only as a CLOUD model, which would send prompts off the machine. Never
+    use Ollama cloud tags.
+  example: true
+  last_verified: '2026-10-19'
+  verified_fields:
+  - license
+  - total_params_b
+  - active_params_b (third-party listing)
+  sources:
+  - https://www.noze.it/en/insights/glm-5-3-weights-licence-benchmark-method/
+  - https://www.morphllm.com/best-ollama-models
+- id: qwen3-1.7b
+  name: Qwen3 1.7B
+  family: qwen3
+  provider: Alibaba Qwen
+  role: fast_small
+  architecture: dense
+  total_params_b: 1.7
+  active_params_b: 1.7
+  attention:
+    kv_layers: 28
+    kv_heads: 8
+    head_dim: 128
+  context_max: 32768
+  quality_rank: 5
+  capabilities:
+  - chat
+  - multilingual
+  quantizations:
+  - Q4_K_M
+  - Q8_0
+  license: Apache-2.0
+  open_weight: true
+  osi_open_source: true
+  commercial_use: 'yes'
+  commercial_triggers: []
+  allows_fine_tuning: 'yes'
+  allows_distillation: 'yes'
+  runtimes:
+    ollama: qwen3:1.7b
+    hf: Qwen/Qwen3-1.7B
+  example: true
+  last_verified: null
+- id: qwen2.5-coder-7b
+  name: Qwen2.5-Coder 7B Instruct
+  family: qwen2.5-coder
+  provider: Alibaba Qwen
+  role: code
+  architecture: dense
+  total_params_b: 7.6
+  active_params_b: 7.6
+  attention:
+    kv_layers: 28
+    kv_heads: 4
+    head_dim: 128
+  context_max: 32768
+  quality_rank: 30
+  capabilities:
+  - code
+  - chat
+  quantizations:
+  - Q4_K_M
+  - Q5_K_M
+  - Q8_0
+  license: Apache-2.0
+  open_weight: true
+  osi_open_source: true
+  commercial_use: 'yes'
+  commercial_triggers: []
+  allows_fine_tuning: 'yes'
+  allows_distillation: 'yes'
+  runtimes:
+    ollama: qwen2.5-coder:7b
+    hf: Qwen/Qwen2.5-Coder-7B-Instruct
+  example: true
+  last_verified: null
+- id: qwen2.5-coder-14b
+  name: Qwen2.5-Coder 14B Instruct
+  family: qwen2.5-coder
+  provider: Alibaba Qwen
+  role: code
+  architecture: dense
+  total_params_b: 14.7
+  active_params_b: 14.7
+  attention:
+    kv_layers: 48
+    kv_heads: 8
+    head_dim: 128
+  context_max: 32768
+  quality_rank: 42
+  capabilities:
+  - code
+  - chat
+  quantizations:
+  - Q4_K_M
+  - Q5_K_M
+  - Q8_0
+  - AWQ
+  license: Apache-2.0
+  open_weight: true
+  osi_open_source: true
+  commercial_use: 'yes'
+  commercial_triggers: []
+  allows_fine_tuning: 'yes'
+  allows_distillation: 'yes'
+  runtimes:
+    ollama: qwen2.5-coder:14b
+    hf: Qwen/Qwen2.5-Coder-14B-Instruct
+    vllm: Qwen/Qwen2.5-Coder-14B-Instruct
+  example: true
+  last_verified: null
+- id: codestral-22b
+  name: Codestral 22B
+  family: codestral
+  provider: Mistral AI
+  role: code
+  architecture: dense
+  total_params_b: 22.2
+  active_params_b: 22.2
+  attention:
+    kv_layers: 56
+    kv_heads: 8
+    head_dim: 128
+  context_max: 32768
+  quality_rank: 48
+  capabilities:
+  - code
+  - chat
+  quantizations:
+  - Q4_K_M
+  - Q5_K_M
+  - Q8_0
+  license: Mistral Non-Production License
+  open_weight: true
+  osi_open_source: false
+  commercial_use: 'no'
+  commercial_triggers: []
+  allows_fine_tuning: 'no'
+  allows_distillation: 'no'
+  runtimes:
+    ollama: codestral:22b
+    hf: mistralai/Codestral-22B-v0.1
+  example: true
+  last_verified: null
+- id: qwen2.5-coder-32b
+  name: Qwen2.5-Coder 32B Instruct
+  family: qwen2.5-coder
+  provider: Alibaba Qwen
+  role: code
+  architecture: dense
+  total_params_b: 32.8
+  active_params_b: 32.8
+  attention:
+    kv_layers: 64
+    kv_heads: 8
+    head_dim: 128
+  context_max: 32768
+  quality_rank: 58
+  capabilities:
+  - code
+  - chat
+  quantizations:
+  - Q4_K_M
+  - Q5_K_M
+  - Q8_0
+  - AWQ
+  license: Apache-2.0
+  open_weight: true
+  osi_open_source: true
+  commercial_use: 'yes'
+  commercial_triggers: []
+  allows_fine_tuning: 'yes'
+  allows_distillation: 'yes'
+  runtimes:
+    ollama: qwen2.5-coder:32b
+    hf: Qwen/Qwen2.5-Coder-32B-Instruct
+    vllm: Qwen/Qwen2.5-Coder-32B-Instruct
+  example: true
+  last_verified: null
+- id: qwen2.5vl-3b
+  name: Qwen2.5-VL 3B Instruct
+  family: qwen2.5-vl
+  provider: Alibaba Qwen
+  role: vision
+  architecture: dense
+  total_params_b: 3.8
+  active_params_b: 3.8
+  attention:
+    kv_layers: 36
+    kv_heads: 2
+    head_dim: 128
+  context_max: 32768
+  quality_rank: 15
+  capabilities:
+  - vision
+  - chat
+  quantizations:
+  - Q4_K_M
+  - Q8_0
+  license: Qwen Research License
+  open_weight: true
+  osi_open_source: false
+  commercial_use: 'no'
+  commercial_triggers: []
+  allows_fine_tuning: 'no'
+  allows_distillation: 'no'
+  runtimes:
+    ollama: qwen2.5vl:3b
+    hf: Qwen/Qwen2.5-VL-3B-Instruct
+  example: true
+  last_verified: null
+- id: gemma3-4b
+  name: Gemma 3 4B (vision)
+  family: gemma3
+  provider: Google
+  role: vision
+  architecture: dense
+  total_params_b: 4.3
+  active_params_b: 4.3
+  attention:
+    kv_layers: 34
+    kv_heads: 4
+    head_dim: 256
+  context_max: 131072
+  quality_rank: 18
+  capabilities:
+  - vision
+  - chat
+  - multilingual
+  quantizations:
+  - Q4_K_M
+  - Q8_0
+  license: Gemma Terms of Use
+  open_weight: true
+  osi_open_source: false
+  commercial_use: conditional
+  license_conditions: Commercial use allowed; Gemma Prohibited Use Policy applies and must be passed on to users.
+  commercial_triggers:
+  - id: gemma-use-policy
+    type: use_policy
+    blocking: false
+    effect: Gemma Prohibited Use Policy applies and must be passed on to users.
+  allows_fine_tuning: conditional
+  allows_distillation: conditional
+  runtimes:
+    ollama: gemma3:4b
+    hf: google/gemma-3-4b-it
+  example: true
+  last_verified: null
+- id: qwen2.5vl-7b
+  name: Qwen2.5-VL 7B Instruct
+  family: qwen2.5-vl
+  provider: Alibaba Qwen
+  role: vision
+  architecture: dense
+  total_params_b: 8.3
+  active_params_b: 8.3
+  attention:
+    kv_layers: 28
+    kv_heads: 4
+    head_dim: 128
+  context_max: 32768
+  quality_rank: 25
+  capabilities:
+  - vision
+  - chat
+  quantizations:
+  - Q4_K_M
+  - Q8_0
+  license: Apache-2.0
+  open_weight: true
+  osi_open_source: true
+  commercial_use: 'yes'
+  commercial_triggers: []
+  allows_fine_tuning: 'yes'
+  allows_distillation: 'yes'
+  runtimes:
+    ollama: qwen2.5vl:7b
+    hf: Qwen/Qwen2.5-VL-7B-Instruct
+  example: true
+  last_verified: null
+- id: nomic-embed-text
+  name: nomic-embed-text v1.5
+  family: nomic-embed
+  provider: Nomic AI
+  role: embeddings
+  memory_gb: 0.35
+  dimensions: 768
+  context_max: 8192
+  capabilities:
+  - embeddings
+  license: Apache-2.0
+  open_weight: true
+  osi_open_source: true
+  commercial_use: 'yes'
+  commercial_triggers: []
+  allows_fine_tuning: 'yes'
+  allows_distillation: 'yes'
+  runtimes:
+    ollama: nomic-embed-text
+    hf: nomic-ai/nomic-embed-text-v1.5
+  example: true
+  last_verified: null
+- id: bge-m3
+  name: BGE-M3
+  family: bge
+  provider: BAAI
+  role: embeddings
+  memory_gb: 1.2
+  dimensions: 1024
+  context_max: 8192
+  capabilities:
+  - embeddings
+  - multilingual
+  license: MIT
+  open_weight: true
+  osi_open_source: true
+  commercial_use: 'yes'
+  commercial_triggers: []
+  allows_fine_tuning: 'yes'
+  allows_distillation: 'yes'
+  runtimes:
+    ollama: bge-m3
+    hf: BAAI/bge-m3
+  example: true
+  last_verified: null
+- id: bge-reranker-base
+  name: BGE Reranker Base
+  family: bge-reranker
+  provider: BAAI
+  role: reranker
+  memory_gb: 0.6
+  capabilities:
+  - reranker
+  license: MIT
+  open_weight: true
+  osi_open_source: true
+  commercial_use: 'yes'
+  commercial_triggers: []
+  allows_fine_tuning: 'yes'
+  allows_distillation: 'yes'
+  runtimes:
+    hf: BAAI/bge-reranker-base
+  example: true
+  last_verified: null
+- id: bge-reranker-v2-m3
+  name: BGE Reranker v2 M3
+  family: bge-reranker
+  provider: BAAI
+  role: reranker
+  memory_gb: 1.2
+  capabilities:
+  - reranker
+  - multilingual
+  license: Apache-2.0
+  open_weight: true
+  osi_open_source: true
+  commercial_use: 'yes'
+  commercial_triggers: []
+  allows_fine_tuning: 'yes'
+  allows_distillation: 'yes'
+  runtimes:
+    hf: BAAI/bge-reranker-v2-m3
+  example: true
+  last_verified: null
+- id: whisper-small
+  name: Whisper small (whisper.cpp)
+  family: whisper
+  provider: OpenAI (weights) / ggml-org (runtime)
+  role: stt
+  memory_gb: 0.9
+  capabilities:
+  - stt
+  - multilingual
+  license: MIT
+  open_weight: true
+  osi_open_source: true
+  commercial_use: 'yes'
+  commercial_triggers: []
+  allows_fine_tuning: 'yes'
+  allows_distillation: 'yes'
+  runtimes:
+    whisper_cpp: ggml-small.bin
+    hf: openai/whisper-small
+  example: true
+  last_verified: null
+- id: whisper-large-v3-turbo
+  name: Whisper large-v3-turbo (whisper.cpp)
+  family: whisper
+  provider: OpenAI (weights) / ggml-org (runtime)
+  role: stt
+  memory_gb: 2.0
+  capabilities:
+  - stt
+  - multilingual
+  license: MIT
+  open_weight: true
+  osi_open_source: true
+  commercial_use: 'yes'
+  commercial_triggers: []
+  allows_fine_tuning: 'yes'
+  allows_distillation: 'yes'
+  runtimes:
+    whisper_cpp: ggml-large-v3-turbo.bin
+    hf: openai/whisper-large-v3-turbo
+  example: true
+  last_verified: null

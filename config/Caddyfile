@@ -1,0 +1,30 @@
+{
+	admin off
+	# Local CA only: no ACME / Let's Encrypt calls leave the machine.
+	local_certs
+	skip_install_trust
+}
+
+:8443 {
+	tls internal
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options nosniff
+		Referrer-Policy no-referrer
+		Content-Security-Policy "frame-ancestors 'none'"
+		-Server
+	}
+	# Gateway web UI and API (history, memory cards, collections, audit). Personal access
+	# tokens (gateway token --user ...) authenticate; the gateway key never reaches a browser.
+	handle_path /gateway/* {
+		reverse_proxy gateway:8080
+	}
+	# Grafana (tier 3 monitoring). Restrict to admins with Authentik forward-auth in production.
+	handle /grafana/* {
+		reverse_proxy grafana:3000
+	}
+	handle {
+		reverse_proxy open-webui:8080
+	}
+}

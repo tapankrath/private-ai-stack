@@ -1,0 +1,23 @@
+# Folders the ingest worker indexes. Copy to config/collections.yaml.
+# Paths are inside the worker container: DOCUMENTS_DIR on the host is mounted read-only at /documents.
+# sensitivity: public | personal | confidential | restricted   (a floor: content can only raise it)
+collections:
+  - name: notes
+    path: /documents/notes
+    owner: owner                 # tier 1: the single user is "owner"; tier 2+: an email / SSO user id
+    sensitivity: personal
+    purpose: "Personal notes and research"
+  - name: clients
+    path: /documents/clients
+    owner: admin@example.com
+    sensitivity: confidential
+    retention_days: 2555         # ~7 years; confirm against your records policy
+    purpose: "Client files"
+    grants:
+      - {principal: "group:partners", permission: read}
+  - name: finance-restricted
+    path: /documents/finance
+    owner: admin@example.com
+    sensitivity: restricted      # never searched unless a user unlocks Restricted for the session
+    grants:
+      - {principal: "group:finance", permission: read}

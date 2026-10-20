@@ -1,0 +1,109 @@
+# Reference numbers for sizing. ALL VALUES ARE ROUGH ESTIMATES.
+#
+# Every response has two phases:
+#   prefill - reading the whole prompt. COMPUTE-bound  -> tflops_fp16
+#   decode  - writing tokens one by one. MEMORY-BANDWIDTH-bound -> bandwidth_gbps
+# Prompt-heavy work (big RAG contexts, long documents) favors high-compute GPUs;
+# generation-heavy work (drafting, code) favors high memory bandwidth.
+# Override any value in a profile under hardware.override (bandwidth_gbps, tflops_fp16).
+# Prices live in config/pricing.yaml, not here.
+
+schema_version: 2
+
+bandwidth_gbps:
+  apple_m1: 68
+  apple_m1_pro: 200
+  apple_m1_max: 400
+  apple_m1_ultra: 800
+  apple_m2: 100
+  apple_m2_pro: 200
+  apple_m2_max: 400
+  apple_m2_ultra: 800
+  apple_m3: 100
+  apple_m3_pro: 150
+  apple_m3_max: 400
+  apple_m3_ultra: 819
+  apple_m4: 120
+  apple_m4_pro: 273
+  apple_m4_max: 546
+  apple_m5_max: 614            # third-party listing, Sept 2026
+  rtx_3060: 360
+  rtx_3080: 760
+  rtx_3090: 936
+  rtx_4060_ti: 288
+  rtx_4070: 504
+  rtx_4080: 717
+  rtx_4090: 1008
+  rtx_5090: 1792
+  rtx_a4000: 448
+  rtx_a5000: 768
+  rtx_a6000: 768
+  rtx_6000_ada: 960
+  l40s: 864
+  a100_80gb: 2039
+  h100_pcie: 2000
+  dgx_spark: 273               # verified 2026-10-19 (implicator.ai)
+  dgx_station: 7100            # unverified placeholder
+  amd_ryzen_ai_max_395: 256    # 256-bit LPDDR5X-8000 (estimate)
+  cpu_ddr4: 45
+  cpu_ddr5: 70
+
+# Dense FP16 tensor throughput, very rough. Used only for prefill / time-to-first-token.
+tflops_fp16:
+  apple_m1: 2.6
+  apple_m2: 3.6
+  apple_m3: 4.1
+  apple_m4: 4.3
+  apple_m1_pro: 5.2
+  apple_m2_pro: 6.8
+  apple_m3_pro: 7.4
+  apple_m4_pro: 9.2
+  apple_m1_max: 10.4
+  apple_m2_max: 13.6
+  apple_m3_max: 16.4
+  apple_m4_max: 18.4
+  apple_m5_max: 40           # M5 GPU adds neural accelerators; unverified
+  apple_m2_ultra: 27
+  apple_m3_ultra: 33
+  rtx_3060: 51
+  rtx_3090: 71
+  rtx_4060_ti: 88
+  rtx_4070: 117
+  rtx_4080: 195
+  rtx_4090: 165
+  rtx_5090: 210
+  rtx_a6000: 155
+  rtx_6000_ada: 365
+  l40s: 362
+  a100_80gb: 312
+  h100_pcie: 756
+  dgx_spark: 125
+  dgx_station: 2500
+  amd_ryzen_ai_max_395: 30
+  cpu_ddr4: 1
+  cpu_ddr5: 2
+
+# When the exact chip/GPU is unknown, assume a conservative member of the class.
+defaults_by_platform:
+  apple: {hw_key: apple_m2}
+  nvidia:
+    - {max_vram_gb: 12, hw_key: rtx_3060}
+    - {max_vram_gb: 16, hw_key: rtx_4060_ti}
+    - {max_vram_gb: 24, hw_key: rtx_3090}
+    - {max_vram_gb: 48, hw_key: rtx_a6000}
+    - {max_vram_gb: 100000, hw_key: l40s}
+  nvidia_unified: {hw_key: dgx_spark}
+  amd_unified: {hw_key: amd_ryzen_ai_max_395}
+  amd: {hw_key: cpu_ddr5}
+  cpu: {hw_key: cpu_ddr4}
+
+compute_class:               # by tflops_fp16
+  high: 100
+  medium: 30
+
+# Usable share of unified memory for models (OS headroom kept back).
+unified_usable_fraction:
+  apple_up_to_36gb: 0.67
+  apple_above_36gb: 0.75
+  nvidia_unified: 0.85
+  amd_unified: 0.75

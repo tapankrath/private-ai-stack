@@ -1,0 +1,92 @@
+schema_version: 1
+profile_id: law-accounting-office-10
+description: 10-person professional services office searching client files and drafting documents, with strict confidentiality.
+
+org:
+  type: small_business
+  name: "Example CPA & Law Office"
+  technical_skill: it_admin
+
+users:
+  count: 10
+  peak_concurrent: 4
+
+jobs:
+  - general_qa
+  - drafting
+  - knowledge_recall
+  - conversation_recall
+  - scanned_docs
+
+data:
+  types: [text, pdf, scans, spreadsheets, email_exports]
+  volume_gb: 250
+  document_count: 120000
+  growth_gb_per_month: 5
+  languages: [en]
+
+sensitivity:
+  level: regulated
+  regulated_data: [financial, legal, client_confidential]
+  air_gapped: true
+  data_residency: local_network
+
+usage:
+  queries_per_user_per_day: 25
+  latency: few_seconds
+  offline_required: true
+  context_needs: long
+
+hardware:
+  autodetect: true
+  override: {}
+  budget_usd: lt_5000
+  deployment_preference: home_server   # single on-prem workstation
+
+features:
+  web_research: false
+  connectors: []
+  cloud_burst: false
+  sso: true
+
+retention:
+  conversations_days: 2555             # ~7 years; confirm with firm policy
+  documents: keep_until_deleted
+  memory_cards: admin_and_user_managed
+
+workload:
+  shape: prompt_heavy            # prompt_heavy | generation_heavy | balanced
+  agents:
+    count: 0
+    always_on: false
+
+customization:               # open-weight-only capabilities; all off unless justified
+  post_training:
+    requested: false
+    justification: ""
+  distillation:
+    requested: false
+    justification: ""
+  abliteration:
+    requested: false
+    justification: ""
+    admin_approved: false
+
+blockers: [security_review, expertise]
+priorities: [privacy, security, availability]
+
+licensing:
+  use: commercial
+
+assumptions:
+  - "Scanned receipts/statements need text extraction only, not photo understanding."
+  - "Retention period must be confirmed against the firm's records policy."
+
+expected:
+  tier: 2
+  runtime: ollama_or_vllm
+  must_include: [general_chat_mid, embeddings, reranker, ocr_pipeline, collection_acls, restricted_tier, sso, audit_log, encrypted_backups, air_gap_mode]
+  must_exclude: [vision, speech_to_text, code_model, searxng, cloud_burst, live_connectors, abliteration]
+  must_generate: [security_review_packet]
+  license_filter: commercial_allowed
+  max_memory_use_pct: 80

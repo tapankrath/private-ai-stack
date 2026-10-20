@@ -1,0 +1,82 @@
+# Zero egress by default; every allowed flow is listed here.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: default-deny-all}
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: allow-dns}
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+  egress:
+    - to: [{namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: kube-system}}, podSelector: {matchLabels: {k8s-app: kube-dns}}}]
+      ports: [{protocol: UDP, port: 53}, {protocol: TCP, port: 53}]
+---
+# Ingress controller -> UI and Gateway web UI only
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: ingress-to-ui}
+spec:
+  podSelector: {matchExpressions: [{key: app, operator: In, values: [open-webui, gateway]}]}
+  policyTypes: [Ingress]
+  ingress:
+    - from: [{namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: kube-system}}}]
+---
+# Open WebUI may talk ONLY to the Gateway (never to the runtime)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: webui-to-gateway}
+spec:
+  podSelector: {matchLabels: {app: open-webui}}
+  policyTypes: [Egress]
+  egress:
+    - to: [{podSelector: {matchLabels: {app: gateway}}}]
+      ports: [{port: 8080}]
+    - to: [{podSelector: {matchLabels: {cnpg.io/cluster: pg}}}]
+      ports: [{port: 5432}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: gateway-ingress}
+spec:
+  podSelector: {matchLabels: {app: gateway}}
+  policyTypes: [Ingress]
+  ingress:
+    - from: [{podSelector: {matchLabels: {app: open-webui}}}, {podSelector: {matchLabels: {app: prometheus}}}]
+      ports: [{port: 8080}]
+---
+# Gateway and ingest worker -> runtimes, database, document services
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: gateway-egress}
+spec:
+  podSelector: {matchExpressions: [{key: app, operator: In, values: [gateway, ingest-worker]}]}
+  policyTypes: [Egress]
+  egress:
+    - to: [{podSelector: {matchExpressions: [{key: app, operator: In, values: [vllm, ollama, docling, whisper, fetcher]}]}}]
+    - to: [{podSelector: {matchLabels: {cnpg.io/cluster: pg}}}]
+      ports: [{port: 5432}]
+---
+# Runtimes accept traffic only from the Gateway, worker and Prometheus; they have no egress at all
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: runtime-ingress}
+spec:
+  podSelector: {matchExpressions: [{key: app, operator: In, values: [vllm, ollama, docling, whisper]}]}
+  policyTypes: [Ingress]
+  ingress:
+    - from: [{podSelector: {matchExpressions: [{key: app, operator: In, values: [gateway, ingest-worker, prometheus]}]}}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: postgres-ingress}
+spec:
+  podSelector: {matchLabels: {cnpg.io/cluster: pg}}
+  policyTypes: [Ingress]
+  ingress:
+    - from: [{podSelector: {matchExpressions: [{key: app, operator: In, values: [gateway, ingest-worker, open-webui]}]}},
+             {podSelector: {matchLabels: {cnpg.io/cluster: pg}}}]

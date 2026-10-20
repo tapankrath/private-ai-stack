@@ -1,0 +1,95 @@
+schema_version: 1
+profile_id: household-photos-docs
+description: Privacy-conscious family sharing one home server for questions, household paperwork, scanned receipts, and photo questions.
+
+org:
+  type: household
+  name: "Family Home"
+  technical_skill: non_technical
+
+users:
+  count: 3
+  peak_concurrent: 2
+
+jobs:
+  - general_qa
+  - writing
+  - knowledge_recall
+  - conversation_recall
+  - scanned_docs
+  - image_understanding
+
+data:
+  types: [text, pdf, scans, images]
+  volume_gb: 40
+  document_count: 8000
+  growth_gb_per_month: 1
+  languages: [en]
+
+sensitivity:
+  level: high
+  regulated_data: [financial, health, children]
+  air_gapped: false
+  data_residency: local_network
+
+usage:
+  queries_per_user_per_day: 10
+  latency: few_seconds
+  offline_required: false
+  context_needs: standard
+
+hardware:
+  autodetect: true
+  override:
+    platform: linux_x86
+    ram_gb: 32
+    gpu: nvidia
+    vram_gb: 12
+    free_disk_gb: 1000
+  budget_usd: lt_1500
+  deployment_preference: home_server
+
+features:
+  web_research: false
+  connectors: []
+  cloud_burst: false
+  sso: false
+
+retention:
+  conversations_days: 365
+  documents: keep_until_deleted
+  memory_cards: user_managed
+
+workload:
+  shape: balanced            # prompt_heavy | generation_heavy | balanced
+  agents:
+    count: 0
+    always_on: false
+
+customization:               # open-weight-only capabilities; all off unless justified
+  post_training:
+    requested: false
+    justification: ""
+  distillation:
+    requested: false
+    justification: ""
+  abliteration:
+    requested: false
+    justification: ""
+    admin_approved: false
+
+blockers: [expertise]
+priorities: [privacy, security, cost]
+
+licensing:
+  use: personal
+
+assumptions:
+  - "Children's data present: Restricted tier enabled for kids' school/medical folders."
+
+expected:
+  tier: 2
+  runtime: ollama
+  must_include: [general_chat_small_or_mid, embeddings, ocr_pipeline, vision_small, per_user_accounts, restricted_tier]
+  must_exclude: [code_model, speech_to_text, vllm, sso, searxng, cloud_burst, abliteration]
+  max_memory_use_pct: 80

@@ -1,0 +1,15 @@
+groups:
+  - name: private-ai
+    rules:
+      - alert: RuntimeErrors
+        expr: increase(gateway_runtime_errors_total[10m]) > 5
+        annotations: {summary: "The model runtime is failing requests"}
+      - alert: SlowAnswers
+        expr: rate(gateway_chat_latency_seconds_sum[15m]) / rate(gateway_chat_latency_seconds_count[15m]) > 30
+        annotations: {summary: "Average answer time above 30 s"}
+      - alert: IngestStale
+        expr: time() - gateway_last_ingest > 86400 * 2
+        annotations: {summary: "No documents indexed for 2 days (is the ingest worker running?)"}
+      - alert: AuthFailures
+        expr: increase(gateway_auth_failures_total[10m]) > 20
+        annotations: {summary: "Many failed logins: check the audit log"}

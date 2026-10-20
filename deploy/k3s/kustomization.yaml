@@ -1,0 +1,24 @@
+# Tier 3 on k3s. Review every image tag (pin digests), storage class and GPU node labels.
+#   kubectl apply -k deploy/k3s
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: private-ai
+resources:
+  - namespace.yaml
+  - networkpolicies.yaml
+  - postgres-cnpg.yaml
+  - gateway.yaml
+  - open-webui.yaml
+  - vllm.yaml
+  - ollama.yaml
+  - ingest-worker.yaml
+  - ingress.yaml
+configMapGenerator:
+  - name: gateway-env
+    envs: [gateway.env]          # copy generated/.env.gateway here
+secretGenerator:
+  - name: gateway-secrets        # create from ./secrets; never commit the files
+    files: [secrets/gateway_key]
+    envs: [secrets/gateway-db.env]   # GATEWAY_DATABASE_URL, GATEWAY_DATABASE_ADMIN_URL
+generatorOptions:
+  disableNameSuffixHash: true

@@ -1,0 +1,31 @@
+# Sidecar runtime for embeddings and small models next to vLLM.
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: ollama, labels: {app: ollama}}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector: {matchLabels: {app: ollama}}
+  template:
+    metadata: {labels: {app: ollama}}
+    spec:
+      automountServiceAccountToken: false
+      securityContext: {seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: ollama
+          image: ollama/ollama:PIN_ME
+          ports: [{containerPort: 11434}]
+          securityContext: {allowPrivilegeEscalation: false, capabilities: {drop: [ALL]}}
+          livenessProbe: {exec: {command: ["ollama", "list"]}, periodSeconds: 30}
+          volumeMounts: [{name: models, mountPath: /root/.ollama}]
+      volumes: [{name: models, persistentVolumeClaim: {claimName: ollama-models}}]
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: ollama-models}
+spec: {accessModes: [ReadWriteOnce], resources: {requests: {storage: 50Gi}}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: ollama}
+spec: {selector: {app: ollama}, ports: [{port: 11434, targetPort: 11434}]}

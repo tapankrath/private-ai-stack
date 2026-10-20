@@ -1,0 +1,205 @@
+# Prices used by the advisor's hardware options and 3-year TCO (advisor/tco.py).
+# Prices are volatile: memory shortages pushed some high-memory machines UP in price in 2026,
+# so they may hold value instead of depreciating. Every entry carries last_verified; the
+# advisor flags entries older than `stale_after_days` or never verified (null).
+# All figures are estimates in USD.
+
+schema_version: 1
+stale_after_days: 60
+
+# ------------------------------------------------------------------ hardware options
+# usable_gb = memory available for models. compute_class drives the prefill rule
+# (prompt_heavy -> high compute). market_tier per the Cahall article's three tiers.
+hardware_options:
+  - id: pc-rtx3090-24
+    name: "Desktop with one RTX 3090 24 GB (used GPU)"
+    platform: nvidia
+    hw_key: rtx_3090
+    usable_gb: 24
+    gpu_count: 1
+    price_usd: [1300, 1900]
+    power_watts: {idle: 60, load: 420}
+    max_tier: 2
+    market_tier: consumer_ai_workstation
+    last_verified: null
+  - id: mac-mini-m4pro-48
+    name: "Mac mini, M4 Pro, 48 GB unified memory"
+    platform: apple
+    hw_key: apple_m4_pro
+    usable_gb: 36
+    gpu_count: 1
+    price_usd: [1800, 2300]
+    power_watts: {idle: 10, load: 90}
+    max_tier: 2
+    market_tier: consumer_ai_workstation
+    last_verified: null
+  - id: pc-2x3090-48
+    name: "Workstation with two RTX 3090 24 GB (48 GB total, used GPUs)"
+    platform: nvidia
+    hw_key: rtx_3090
+    usable_gb: 48
+    gpu_count: 2
+    price_usd: [2600, 3600]
+    power_watts: {idle: 110, load: 800}
+    max_tier: 3
+    market_tier: consumer_ai_workstation
+    last_verified: null
+  - id: pc-rtx4090-24
+    name: "Workstation with one RTX 4090 24 GB"
+    platform: nvidia
+    hw_key: rtx_4090
+    usable_gb: 24
+    gpu_count: 1
+    price_usd: [2800, 3800]
+    power_watts: {idle: 70, load: 500}
+    max_tier: 2
+    market_tier: consumer_ai_workstation
+    last_verified: null
+  - id: amd-ryzen-ai-halo-128
+    name: "AMD Ryzen AI Halo developer platform, 128 GB unified memory"
+    platform: amd_unified
+    hw_key: amd_ryzen_ai_max_395
+    usable_gb: 96            # estimate: share of 128 GB assignable to the GPU varies by OS/driver
+    gpu_count: 1
+    price_usd: [3999, 3999]
+    power_watts: {idle: 15, load: 160}
+    max_tier: 2
+    market_tier: consumer_ai_workstation
+    last_verified: "2026-10-19"
+    source: "https://hothardware.com/news/amd-ryzen-ai-halo-dev-kits-hit-retail-128gb-ram-3999-price-tag"
+  - id: pc-rtx5090-32
+    name: "Workstation with one RTX 5090 32 GB"
+    platform: nvidia
+    hw_key: rtx_5090
+    usable_gb: 32
+    gpu_count: 1
+    price_usd: [3800, 5000]
+    power_watts: {idle: 80, load: 650}
+    max_tier: 2
+    market_tier: consumer_ai_workstation
+    last_verified: null
+  - id: dgx-spark-64
+    name: "NVIDIA DGX Spark-class, 64 GB unified memory"
+    platform: nvidia_unified
+    hw_key: dgx_spark
+    usable_gb: 52
+    gpu_count: 1
+    price_usd: [4999, 4999]
+    power_watts: {idle: 30, load: 240}
+    max_tier: 2
+    market_tier: consumer_ai_workstation
+    last_verified: "2026-10-19"
+    source: "https://www.implicator.ai/nvidia-adds-64gb-dgx-spark-at-4-999-as-128gb-model-climbs-to-6-950/"
+  - id: mac-studio-m5max-128
+    name: "Mac Studio, M5 Max, 128 GB unified memory"
+    platform: apple
+    hw_key: apple_m5_max
+    usable_gb: 96
+    gpu_count: 1
+    price_usd: [5399, 6899]
+    power_watts: {idle: 15, load: 200}
+    max_tier: 2
+    market_tier: consumer_ai_workstation
+    last_verified: "2026-10-19"
+    source: "https://aiindigo.com/hardware/apple-mac-studio-m5-max-128gb (third-party; not checked on apple.com)"
+  - id: dgx-spark-128
+    name: "NVIDIA DGX Spark-class, 128 GB unified memory"
+    platform: nvidia_unified
+    hw_key: dgx_spark
+    usable_gb: 110
+    gpu_count: 1
+    price_usd: [6950, 6950]
+    power_watts: {idle: 30, load: 240}
+    max_tier: 3
+    market_tier: consumer_ai_workstation
+    note: "Sensible 'serious SMB pilot' machine: 128 GB-class unified memory, CUDA stack, strong prefill."
+    last_verified: "2026-10-19"
+    source: "https://www.implicator.ai/nvidia-adds-64gb-dgx-spark-at-4-999-as-128gb-model-climbs-to-6-950/"
+  - id: ws-rtx6000ada-48
+    name: "Workstation with one RTX 6000 Ada 48 GB"
+    platform: nvidia
+    hw_key: rtx_6000_ada
+    usable_gb: 48
+    gpu_count: 1
+    price_usd: [9000, 12000]
+    power_watts: {idle: 70, load: 400}
+    max_tier: 3
+    market_tier: consumer_ai_workstation
+    last_verified: null
+  - id: srv-2xl40s-96
+    name: "Server with two L40S 48 GB (96 GB total)"
+    platform: nvidia
+    hw_key: l40s
+    usable_gb: 96
+    gpu_count: 2
+    price_usd: [25000, 35000]
+    power_watts: {idle: 200, load: 1100}
+    max_tier: 3
+    market_tier: pro_ai_workstation
+    last_verified: null
+  - id: pro-ai-workstation
+    name: "Pro AI Workstation (DGX Station-class, via VAR quote)"
+    platform: nvidia_unified
+    hw_key: dgx_station
+    usable_gb: 700
+    gpu_count: 1
+    price_usd: [90000, 120000]
+    power_watts: {idle: 300, load: 1600}
+    max_tier: 3
+    market_tier: pro_ai_workstation
+    last_verified: null
+
+market_tiers:
+  consumer_ai_workstation: "Order online at a published price (roughly $4k-$7k for 128 GB-class in Oct 2026): Mac Studio, DGX Spark, AMD Ryzen AI Halo. Fits Tier 1-2 and small Tier 3."
+  pro_ai_workstation: "Through a VAR on a quote (roughly $100k): more memory and GPU cores, e.g. DGX Station-class. Large Tier 3."
+  enterprise_ai_infrastructure: "Rack-scale systems in data-center facilities. Out of scope: if a profile needs this, it has outgrown local."
+
+budget_caps_usd:
+  none: 0
+  lt_1500: 1500
+  lt_5000: 5000
+  lt_10000: 10000
+  lt_20000: 20000
+  lt_150000: 150000
+  gt_150000: 10000000
+
+# ------------------------------------------------------------------ running costs (local)
+running:
+  electricity_usd_per_kwh: 0.17
+  active_hours_per_day: 10           # hours at load-ish; the rest idle (estimate)
+  admin_hours_per_month: {1: 1, 2: 4, 3: 16}
+  admin_rate_usd_per_hour:           # individuals and households: own time, not priced
+    individual: 0
+    household: 0
+    small_business: 75
+    smb: 75
+  networking_one_time_usd: {1: 0, 2: 300, 3: 2500}   # switch, UPS, cabling (estimate)
+  existing_machine_power_share: 0.5  # when reusing a machine, count half its power to AI (estimate)
+  last_verified: null
+
+# ------------------------------------------------------------------ hosted alternatives
+usage_assumptions:
+  input_tokens_per_query: {standard: 2000, long: 8000, very_long: 30000}   # incl. retrieved context
+  output_tokens_per_query: 500
+  working_days_per_month: 22
+  agent_tokens_per_day: {input: 2000000, output: 200000}   # per always-on agent (estimate)
+
+api:
+  open_model:
+    label: "Hosted open-weight model API (e.g. Qwen3.6 35B-A3B via a router)"
+    usd_per_million: {input: 0.05, output: 0.70}
+    last_verified: "2026-10-19"
+    source: "https://openrouter.ai/qwen/qwen3.6-35b-a3b"
+  frontier:
+    label: "Frontier model API (mid-tier frontier model)"
+    usd_per_million: {input: 3.00, output: 15.00}
+    last_verified: null
+
+subscription:
+  label: "Flat-rate AI subscription (team plan, per user)"
+  usd_per_user_per_month: 25
+  heavy_user_usd_per_month: 100      # for users above heavy_user_queries_per_day
+  heavy_user_queries_per_day: 60
+  covers_agents: false               # always-on agents usually need API billing
+  note: "Providers subsidize subscriptions; often the most capability per dollar for heavy users."
+  last_verified: null

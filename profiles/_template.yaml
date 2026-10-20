@@ -1,0 +1,79 @@
+# Right-Size Advisor profile template. Copy to profiles/<name>.yaml and fill in.
+schema_version: 1
+profile_id: my-profile
+description: ""
+
+org:
+  type: individual            # individual | household | small_business | smb
+  name: ""
+  technical_skill: power_user # non_technical | power_user | it_admin
+
+users:
+  count: 1
+  peak_concurrent: 1
+
+jobs:                         # pick only what you actually need
+  - general_qa
+  - research
+
+data:
+  types: [text, pdf]
+  volume_gb: 1
+  document_count: 1000
+  growth_gb_per_month: 0.1
+  languages: [en]
+
+sensitivity:
+  level: moderate             # low | moderate | high | regulated
+  regulated_data: []          # health | financial | legal | children | client_confidential
+  air_gapped: false
+  data_residency: local_device  # local_device | local_network | on_prem_datacenter
+
+usage:
+  queries_per_user_per_day: 20
+  latency: few_seconds        # instant | few_seconds | batch_ok
+  offline_required: false
+  context_needs: standard     # standard (~8k) | long (~32k) | very_long (~128k)
+
+hardware:
+  autodetect: true
+  override: {}                # e.g. { ram_gb: 32, gpu: "none", vram_gb: 0 }
+  budget_usd: none            # none | lt_1500 | lt_5000 | lt_10000 | lt_20000 | lt_150000 | gt_150000
+  deployment_preference: same_machine  # same_machine | home_server | on_prem_cluster
+
+features:
+  web_research: false         # private SearXNG metasearch
+  connectors: []              # none by default; e.g. [calendar_readonly]
+  cloud_burst: false
+  sso: false
+
+retention:
+  conversations_days: 365
+  documents: keep_until_deleted
+  memory_cards: user_managed
+
+workload:
+  shape: balanced            # prompt_heavy | generation_heavy | balanced
+  agents:
+    count: 0
+    always_on: false
+
+customization:               # open-weight-only capabilities; all off unless justified
+  post_training:
+    requested: false
+    justification: ""
+  distillation:
+    requested: false
+    justification: ""
+  abliteration:
+    requested: false
+    justification: ""
+    admin_approved: false
+
+blockers: [where_to_begin]
+priorities: [privacy, security, availability, cost]
+
+licensing:
+  use: personal               # personal | commercial
+
+assumptions: []

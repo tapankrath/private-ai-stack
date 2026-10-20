@@ -1,0 +1,9 @@
+# Golden set for `make eval` (copy to config/golden.yaml and write 20-50 of your own).
+# Use questions your team really asks. expect_paths are paths inside a collection folder.
+questions:
+  - q: "How many days do customers have to request a refund?"
+    expect_paths: ["policies/refunds.md"]
+  - q: "What did we agree with Acme about invoicing?"
+    expect_paths: ["clients/acme/engagement-letter.docx"]
+  - q: "What is the CEO's shoe size?"
+    answerable: false          # the right answer is "I don't know"

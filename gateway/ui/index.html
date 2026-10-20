@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Private AI — History & Memory</title>
+<style>
+  :root {
+    --bg: #f7f6f3; --panel: #ffffff; --ink: #1d1f22; --muted: #62666d; --line: #e3e1dc;
+    --accent: #1f5f8b; --accent-ink: #ffffff; --warn: #9a3412; --ok: #166534; --chip: #eef2f6;
+    --restricted: #7c2d12; --confidential: #854d0e; --personal: #1f5f8b; --public: #166534;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #15171a; --panel: #1d2024; --ink: #e8e6e3; --muted: #9aa0a6; --line: #2e3238;
+      --accent: #6fa8d6; --accent-ink: #0d1114; --warn: #f0a37a; --ok: #7ccf95; --chip: #262b31;
+      --restricted: #f0a37a; --confidential: #e5c07b; --personal: #6fa8d6; --public: #7ccf95; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { display: flex; align-items: center; gap: 16px; padding: 14px 20px; border-bottom: 1px solid var(--line); background: var(--panel); flex-wrap: wrap; }
+  header h1 { font-size: 16px; margin: 0; font-weight: 600; letter-spacing: .2px; }
+  header .who { margin-left: auto; color: var(--muted); font-size: 13px; }
+  nav { display: flex; gap: 4px; flex-wrap: wrap; }
+  nav button { background: none; border: 1px solid transparent; color: var(--muted); padding: 6px 12px; border-radius: 6px; cursor: pointer; font: inherit; }
+  nav button.on { color: var(--ink); border-color: var(--line); background: var(--bg); }
+  main { max-width: 980px; margin: 0 auto; padding: 20px 16px 60px; }
+  section { display: none; } section.on { display: block; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin-bottom: 14px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  input, select, textarea { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; }
+  input[type=search], textarea { flex: 1; min-width: 200px; }
+  button.primary, button.plain, button.danger { font: inherit; border-radius: 6px; padding: 7px 12px; cursor: pointer; border: 1px solid var(--line); }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  button.plain { background: var(--panel); color: var(--ink); }
+  button.danger { background: var(--panel); color: var(--warn); border-color: var(--warn); }
+  .muted { color: var(--muted); } .small { font-size: 13px; }
+  .chip { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 999px; background: var(--chip); }
+  .s0 { color: var(--public); } .s1 { color: var(--personal); } .s2 { color: var(--confidential); } .s3 { color: var(--restricted); font-weight: 600; }
+  .day { margin: 18px 0 6px; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+  .item { padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 8px; background: var(--panel); cursor: pointer; }
+  .item:hover { border-color: var(--accent); }
+  .msg { padding: 10px 12px; border-radius: 8px; margin: 8px 0; white-space: pre-wrap; word-wrap: break-word; }
+  .msg.user { background: var(--chip); } .msg.assistant { border: 1px solid var(--line); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .notice { padding: 10px 12px; border-radius: 8px; background: var(--chip); margin-bottom: 12px; }
+  .hide { display: none !important; }
+  code { font-size: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Private AI</h1>
+  <nav id="tabs">
+    <button data-tab="history" class="on">History</button>
+    <button data-tab="memory">Memory</button>
+    <button data-tab="collections">Collections</button>
+    <button data-tab="privacy">Privacy</button>
+    <button data-tab="admin" class="hide" id="adminTab">Admin</button>
+  </nav>
+  <div class="who" id="who">Not signed in</div>
+</header>
+<main>
+  <div class="card" id="signin">
+    <strong>Sign in</strong>
+    <p class="muted small">Paste the personal access token your administrator gave you (<code>make ui-token</code>). It stays in this browser only.</p>
+    <div class="row"><input id="token" type="password" placeholder="gwu_..." style="flex:1;min-width:240px"><button class="primary" id="saveToken">Sign in</button></div>
+    <p class="small" id="signinMsg"></p>
+  </div>
+
+  <section id="history" class="on">
+    <div class="card">
+      <div class="row">
+        <input id="q" type="search" placeholder='Search your conversations, e.g. "what did I decide about the lease last month"'>
+        <select id="range"><option value="">Any time</option><option value="7">Past week</option><option value="31">Past month</option><option value="365">Past year</option></select>
+        <button class="primary" id="searchBtn">Search</button>
+      </div>
+      <p class="muted small">Searches by meaning and keyword. Only your own conversations. Restricted ones appear only while Restricted is unlocked.</p>
+    </div>
+    <div id="results"></div>
+    <div id="timeline"></div>
+    <div id="convo" class="card hide"></div>
+  </section>
+
+  <section id="memory">
+    <div class="card">
+      <strong>Memory cards</strong>
+      <p class="muted small">Facts the assistant may use in every chat. Nothing is remembered unless you approve it. Say "remember that …" in a chat to propose one.</p>
+      <div class="row"><input id="newCard" type="search" placeholder="Add a fact, e.g. I prefer replies in British English"><button class="primary" id="addCard">Add</button></div>
+    </div>
+    <div id="cards"></div>
+  </section>
+
+  <section id="collections">
+    <div class="card">
+      <strong>Collections</strong>
+      <p class="muted small">Folders of documents the assistant can search (use a model ending in “+ Recall”). Labels set the floor; content can only raise them.</p>
+      <div class="row">
+        <input id="colName" placeholder="New collection name">
+        <select id="colSens"><option value="personal">Personal</option><option value="confidential">Confidential</option><option value="restricted">Restricted</option><option value="public">Public</option></select>
+        <button class="plain" id="addCol">Create</button>
+      </div>
+    </div>
+    <div id="cols"></div>
+  </section>
+
+  <section id="privacy">
+    <div class="card">
+      <strong>Restricted information</strong>
+      <p class="muted small" id="lockState"></p>
+      <div class="row"><select id="mins"><option value="15">15 minutes</option><option value="60" selected>1 hour</option><option value="240">4 hours</option></select>
+        <input id="reason" placeholder="Reason (recorded in the audit log)" style="flex:1"><button class="plain" id="unlock">Unlock</button><button class="plain" id="lock">Lock now</button></div>
+    </div>
+    <div class="card">
+      <strong>Your data</strong>
+      <p class="muted small">Everything you own, in plain formats.</p>
+      <div class="row"><button class="plain" id="expJson">Download JSON</button><button class="plain" id="expMd">Download Markdown</button></div>
+    </div>
+    <div class="card">
+      <strong>Delete my data</strong>
+      <p class="muted small">Permanently deletes your conversations, summaries and memory cards (rows, search index and vectors). Backups drop it on their next rotation.</p>
+      <div class="row"><input id="delConfirm" placeholder='Type DELETE MY DATA' style="flex:1"><button class="danger" id="delMe">Delete</button></div>
+    </div>
+  </section>
+
+  <section id="admin">
+    <div class="card"><strong>Status</strong><div id="stats" class="small"></div></div>
+    <div class="card"><strong>Audit log</strong>
+      <div class="row" style="margin:8px 0"><input id="auditActor" placeholder="Filter by user"><input id="auditAction" placeholder="Filter by action"><button class="plain" id="auditBtn">Filter</button></div>
+      <div id="audit"></div></div>
+  </section>
+</main>
+<script>
+(function () {
+  "use strict";
+  const BASE = location.pathname.replace(/\/ui\/?$/, "");
+  const SENS = ["Public", "Personal", "Confidential", "Restricted"];
+  let token = null;
+  try { token = localStorage.getItem("gw_token"); } catch (e) { token = null; }
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const day = (ts) => new Date(ts * 1000).toLocaleDateString(undefined, { weekday: "short", year: "numeric", month: "short", day: "numeric" });
+  const time = (ts) => new Date(ts * 1000).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  const chip = (s) => `<span class="chip s${s}">${SENS[s] || ""}</span>`;
+
+  async function api(path, opts = {}) {
+    const r = await fetch(BASE + path, { ...opts, headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json", ...(opts.headers || {}) } });
+    if (r.status === 401) { signOut("Your token is invalid or expired."); throw new Error("401"); }
+    if (!r.ok) { const t = await r.text(); throw new Error(t || r.statusText); }
+    const ct = r.headers.get("content-type") || "";
+    return ct.includes("json") ? r.json() : r.text();
+  }
+  function signOut(msg) { token = null; try { localStorage.removeItem("gw_token"); } catch (e) {} $("signin").classList.remove("hide"); $("signinMsg").textContent = msg || ""; }
+
+  document.querySelectorAll("#tabs button").forEach((b) => b.addEventListener("click", () => {
+    document.querySelectorAll("#tabs button").forEach((x) => x.classList.toggle("on", x === b));
+    document.querySelectorAll("section").forEach((s) => s.classList.toggle("on", s.id === b.dataset.tab));
+    ({ history: loadTimeline, memory: loadCards, collections: loadCols, privacy: loadMe, admin: loadAdmin })[b.dataset.tab]();
+  }));
+
+  $("saveToken").onclick = async () => {
+    token = $("token").value.trim();
+    try { localStorage.setItem("gw_token", token); } catch (e) {}
+    await start();
+  };
+
+  let me = null;
+  async function loadMe() {
+    me = await api("/me");
+    $("who").textContent = `${me.name || me.id}${me.role === "admin" ? " · admin" : ""}${me.restricted_unlocked ? " · Restricted unlocked" : ""}`;
+    $("adminTab").classList.toggle("hide", me.role !== "admin");
+    $("lockState").textContent = me.restricted_unlocked
+      ? `Restricted is unlocked until ${new Date(me.unlocked_until * 1000).toLocaleTimeString()}. Unlocks are logged.`
+      : "Restricted collections and conversations are locked. Unlocking is time-limited and logged.";
+  }
+
+  // ---------------- history
+  async function loadTimeline() {
+    $("results").innerHTML = ""; $("convo").classList.add("hide");
+    const r = await api("/history/conversations?limit=200");
+    let html = "", last = "";
+    for (const c of r.conversations) {
+      const d = day(c.updated_at);
+      if (d !== last) { html += `<div class="day">${esc(d)}</div>`; last = d; }
+      html += `<div class="item" data-id="${esc(c.id)}"><div class="row"><strong>${esc(c.title)}</strong>${chip(c.sensitivity)}<span class="muted small" style="margin-left:auto">${time(c.updated_at)}</span></div></div>`;
+    }
+    $("timeline").innerHTML = html || `<p class="muted">No conversations yet. Chat in the main window and they appear here.</p>`;
+    $("timeline").querySelectorAll(".item").forEach((el) => el.onclick = () => openConvo(el.dataset.id));
+  }
+  async function openConvo(id) {
+    const c = await api("/history/conversations/" + encodeURIComponent(id));
+    let html = `<div class="row"><strong>${esc(c.title)}</strong>${chip(c.sensitivity)}<button class="danger" style="margin-left:auto" id="delConv">Delete</button><button class="plain" id="closeConv">Close</button></div>`;
+    if (c.summary) html += `<div class="notice small"><strong>Summary</strong><br>${esc(c.summary.text)}</div>`;
+    for (const m of c.messages) html += `<div class="msg ${esc(m.role)}"><div class="muted small">${esc(m.role)} · ${day(m.created_at)} ${time(m.created_at)}${m.model ? " · " + esc(m.model) : ""}</div>${esc(m.content)}</div>`;
+    $("convo").innerHTML = html; $("convo").classList.remove("hide"); $("convo").scrollIntoView({ behavior: "smooth" });
+    $("closeConv").onclick = () => $("convo").classList.add("hide");
+    $("delConv").onclick = async () => { if (confirmText("Delete this conversation permanently?")) { await api("/history/conversations/" + encodeURIComponent(id), { method: "DELETE" }); loadTimeline(); } };
+  }
+  function confirmText(q) { const v = prompt(q + ' Type "yes" to confirm.'); return v && v.trim().toLowerCase() === "yes"; }
+  async function search() {
+    const q = $("q").value.trim(); if (!q) return loadTimeline();
+    const days = $("range").value; let qs = "?k=20&q=" + encodeURIComponent(q);
+    if (days) qs += "&since=" + (Date.now() / 1000 - days * 86400);
+    const r = await api("/history/search" + qs);
+    $("timeline").innerHTML = "";
+    $("results").innerHTML = r.results.length ? r.results.map((h) => `<div class="item" data-id="${esc(h.conversation_id)}"><div class="row"><strong>${esc(h.title)}</strong>${chip(h.sensitivity)}<span class="muted small" style="margin-left:auto">${day(h.created_at)}</span></div><div class="small">${esc(h.role)}: ${esc(h.content.slice(0, 280))}${h.content.length > 280 ? "…" : ""}</div></div>`).join("")
+      : `<p class="muted">Nothing found.</p>`;
+    $("results").querySelectorAll(".item").forEach((el) => el.onclick = () => openConvo(el.dataset.id));
+  }
+  $("searchBtn").onclick = search; $("q").addEventListener("keydown", (e) => { if (e.key === "Enter") search(); });
+
+  // ---------------- memory
+  async function loadCards() {
+    const r = await api("/memory");
+    $("cards").innerHTML = r.cards.length ? r.cards.map((c) => `<div class="card"><div class="row"><span class="chip">${c.status === "approved" ? "Approved" : "Proposed"}</span>${chip(c.sensitivity)}<span class="muted small" style="margin-left:auto">${day(c.created_at)}</span></div>
+      <textarea data-id="${esc(c.id)}" rows="2" style="width:100%;margin:8px 0">${esc(c.text)}</textarea>
+      <div class="row">${c.status !== "approved" ? `<button class="primary" data-approve="${esc(c.id)}">Approve</button>` : ""}<button class="plain" data-save="${esc(c.id)}">Save</button><button class="danger" data-del="${esc(c.id)}">Delete</button></div></div>`).join("")
+      : `<p class="muted">No memory cards.</p>`;
+    $("cards").querySelectorAll("[data-approve]").forEach((b) => b.onclick = async () => { await api("/memory/" + b.dataset.approve, { method: "PATCH", body: JSON.stringify({ status: "approved" }) }); loadCards(); });
+    $("cards").querySelectorAll("[data-save]").forEach((b) => b.onclick = async () => { const t = document.querySelector(`textarea[data-id="${b.dataset.save}"]`).value; await api("/memory/" + b.dataset.save, { method: "PATCH", body: JSON.stringify({ text: t }) }); loadCards(); });
+    $("cards").querySelectorAll("[data-del]").forEach((b) => b.onclick = async () => { await api("/memory/" + b.dataset.del, { method: "DELETE" }); loadCards(); });
+  }
+  $("addCard").onclick = async () => { const t = $("newCard").value.trim(); if (!t) return; try { await api("/memory", { method: "POST", body: JSON.stringify({ text: t, approve: true }) }); $("newCard").value = ""; loadCards(); } catch (e) { alert(e.message); } };
+
+  // ---------------- collections
+  async function loadCols() {
+    const r = await api("/collections");
+    $("cols").innerHTML = r.collections.map((c) => `<div class="card"><div class="row"><strong>${esc(c.name)}</strong>${chip(c.default_sensitivity)}<span class="muted small">${c.documents} documents</span>${c.retention_days ? `<span class="muted small">keep ${c.retention_days} days</span>` : ""}</div>
+      <div class="muted small">${esc(c.purpose || "")}</div>
+      <div class="row" style="margin-top:8px"><input type="file" data-up="${esc(c.id)}"><span class="small muted" data-msg="${esc(c.id)}"></span></div>
+      ${c.owner_id === me.id || me.role === "admin" ? `<div class="row" style="margin-top:8px"><input placeholder="group:partners or user:ann@firm.test" data-who="${esc(c.id)}"><button class="plain" data-share="${esc(c.id)}">Share read access</button></div>` : ""}</div>`).join("");
+    $("cols").querySelectorAll("[data-up]").forEach((inp) => inp.onchange = async () => {
+      const f = inp.files[0]; if (!f) return; const msg = document.querySelector(`[data-msg="${inp.dataset.up}"]`); msg.textContent = "Uploading…";
+      try {
+        const r2 = await fetch(BASE + "/collections/" + inp.dataset.up + "/documents?path=" + encodeURIComponent(f.name), { method: "PUT", headers: { "Authorization": "Bearer " + token }, body: f });
+        const j = await r2.json(); msg.textContent = r2.ok ? `${j.status}${j.chunks ? ", " + j.chunks + " chunks" : ""}${j.reason ? " (" + j.reason + ")" : ""}` : (j.detail || "failed");
+        loadCols();
+      } catch (e) { msg.textContent = "failed"; }
+    });
+    $("cols").querySelectorAll("[data-share]").forEach((b) => b.onclick = async () => {
+      const p = document.querySelector(`[data-who="${b.dataset.share}"]`).value.trim(); if (!p) return;
+      try { await api(`/collections/${b.dataset.share}/grants`, { method: "POST", body: JSON.stringify({ principal: p, permission: "read" }) }); alert("Shared with " + p); } catch (e) { alert(e.message); }
+    });
+  }
+  $("addCol").onclick = async () => { const n = $("colName").value.trim(); if (!n) return; try { await api("/collections", { method: "POST", body: JSON.stringify({ name: n, sensitivity: $("colSens").value }) }); $("colName").value = ""; loadCols(); } catch (e) { alert(e.message); } };
+
+  // ---------------- privacy
+  $("unlock").onclick = async () => { await api("/recall/unlock", { method: "POST", body: JSON.stringify({ minutes: +$("mins").value, reason: $("reason").value }) }); loadMe(); };
+  $("lock").onclick = async () => { await api("/recall/lock", { method: "POST" }); loadMe(); };
+  async function download(fmt) {
+    const r = await fetch(BASE + "/me/export?format=" + fmt, { headers: { "Authorization": "Bearer " + token } });
+    const blob = await r.blob(); const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = "my-private-ai-export." + (fmt === "markdown" ? "md" : "json"); a.click();
+  }
+  $("expJson").onclick = () => download("json"); $("expMd").onclick = () => download("markdown");
+  $("delMe").onclick = async () => {
+    if ($("delConfirm").value !== "DELETE MY DATA") { alert('Type DELETE MY DATA exactly.'); return; }
+    const r = await api("/me/delete", { method: "POST", body: JSON.stringify({ confirm: "DELETE MY DATA" }) });
+    alert(`Deleted ${r.conversations} conversations.`); $("delConfirm").value = "";
+  };
+
+  // ---------------- admin
+  async function loadAdmin() {
+    const s = await api("/admin/stats");
+    $("stats").innerHTML = Object.entries(s).map(([k, v]) => `<span class="chip" style="margin:2px">${esc(k)}: ${esc(k === "last_ingest" && v ? day(v) : v)}</span>`).join(" ");
+    loadAudit();
+  }
+  async function loadAudit() {
+    let qs = "?limit=200"; if ($("auditActor").value) qs += "&actor=" + encodeURIComponent($("auditActor").value); if ($("auditAction").value) qs += "&action=" + encodeURIComponent($("auditAction").value);
+    const r = await api("/admin/audit" + qs);
+    $("audit").innerHTML = `<table><tr><th>When</th><th>User</th><th>Action</th><th>Detail</th></tr>${r.entries.map((e) => `<tr><td>${day(e.ts)} ${time(e.ts)}</td><td>${esc(e.actor)}</td><td>${esc(e.action)}</td><td><code>${esc(JSON.stringify(e.detail)).slice(0, 300)}</code>${e.model_digest ? `<br><span class="muted">model ${esc(e.model_digest)}</span>` : ""}</td></tr>`).join("")}</table>`;
+  }
+  $("auditBtn").onclick = loadAudit;
+
+  async function start() {
+    if (!token) { signOut(""); return; }
+    try { await loadMe(); $("signin").classList.add("hide"); await loadTimeline(); } catch (e) { if (e.message !== "401") $("signinMsg").textContent = "Could not reach the Gateway."; }
+  }
+  start();
+})();
+</script>
+</body>
+</html>

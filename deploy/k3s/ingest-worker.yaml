@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: ingest-worker, labels: {app: ingest-worker}}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: ingest-worker}}
+  template:
+    metadata: {labels: {app: ingest-worker}}
+    spec:
+      automountServiceAccountToken: false
+      securityContext: {runAsNonRoot: true, runAsUser: 10001, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: worker
+          image: private-ai/gateway:PIN_ME
+          args: ["python", "-m", "gateway", "ingest", "--watch", "--config", "/config/collections.yaml"]
+          envFrom: [{configMapRef: {name: gateway-env}}, {secretRef: {name: gateway-secrets}}]
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          volumeMounts:
+            - {name: documents, mountPath: /documents, readOnly: true}
+            - {name: collections, mountPath: /config}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: documents, persistentVolumeClaim: {claimName: documents, readOnly: true}}
+        - {name: collections, configMap: {name: collections}}
+        - {name: tmp, emptyDir: {}}

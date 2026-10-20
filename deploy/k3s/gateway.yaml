@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: gateway, labels: {app: gateway}}
+spec:
+  replicas: 2
+  selector: {matchLabels: {app: gateway}}
+  template:
+    metadata: {labels: {app: gateway}}
+    spec:
+      automountServiceAccountToken: false
+      securityContext: {runAsNonRoot: true, runAsUser: 10001, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: gateway
+          image: private-ai/gateway:PIN_ME
+          args: ["python", "-m", "gateway", "serve", "--port", "8080"]
+          ports: [{containerPort: 8080}]
+          envFrom: [{configMapRef: {name: gateway-env}}, {secretRef: {name: gateway-secrets}}]
+          env:
+            - {name: GATEWAY_GATEWAY_KEY_FILE, value: /secrets/gateway_key}
+          volumeMounts: [{name: key, mountPath: /secrets, readOnly: true}, {name: tmp, mountPath: /tmp}]
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          readinessProbe: {httpGet: {path: /health, port: 8080}, periodSeconds: 10}
+          livenessProbe: {httpGet: {path: /health, port: 8080}, periodSeconds: 30, failureThreshold: 3}
+          resources: {requests: {cpu: 250m, memory: 512Mi}, limits: {memory: 2Gi}}
+      volumes:
+        - {name: key, secret: {secretName: gateway-secrets, items: [{key: gateway_key, path: gateway_key}]}}
+        - {name: tmp, emptyDir: {}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: gateway}
+spec: {selector: {app: gateway}, ports: [{port: 8080, targetPort: 8080}]}

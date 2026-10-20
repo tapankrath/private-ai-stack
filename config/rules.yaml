@@ -1,0 +1,101 @@
+# Deterministic rules for the Right-Size Advisor.
+#
+# Principle: a capability is enabled ONLY when a selected job, a declared data type, or an
+# explicit feature flag requires it. Everything not enabled is listed in the output as
+# EXCLUDED, with the reason. The LLM explainer never adds anything; it only explains.
+
+schema_version: 2
+
+# ---------------------------------------------------------------- jobs -> capabilities
+jobs:
+  general_qa:          [chat]
+  writing:             [chat]
+  research:            [chat]                 # private web search is the explicit features.web_research flag
+  knowledge_recall:    [chat, embeddings, reranker, document_parsing]
+  conversation_recall: [chat, embeddings]
+  drafting:            [chat]
+  coding:              [chat, code]
+  data_analysis:       [chat, long_context]
+  scanned_docs:        [ocr, document_parsing]
+  image_understanding: [vision]
+  transcription:       [stt]
+  translation:         [chat, multilingual]
+  agent_tasks:         [chat, tool_calling]
+
+# ---------------------------------------------------------------- data types -> capabilities
+# Applied only when the data will be ingested (knowledge_recall is a job).
+data_types:
+  text:          [document_parsing]
+  pdf:           [document_parsing]
+  spreadsheets:  [document_parsing]
+  code:          [document_parsing]
+  email_exports: [document_parsing]           # .mbox / .eml files, never live mailbox access
+  scans:         [ocr, document_parsing]
+  images:        [ocr]                        # photos get OCR text; vision only with image_understanding
+  audio:         [stt]
+
+# usage.context_needs -> context window planned for the general model
+context_tokens:
+  standard: 8192
+  long: 32768
+  very_long: 131072
+long_context_needs: [long, very_long]          # these also enable the long_context capability
+
+# Non-English languages in data.languages add `multilingual`.
+# workload.agents.count > 0 adds `tool_calling`.
+
+# ---------------------------------------------------------------- tiers
+tiers:
+  1: {max_users: 1,   name: "Personal (localhost only)",        min_general_params_b: 3,  setup_effort: "about 1 hour (estimate)"}
+  2: {max_users: 20,  name: "Home / small office server (LAN)", min_general_params_b: 7,  setup_effort: "half a day (estimate)"}
+  3: {max_users: 250, name: "SMB on-prem",                      min_general_params_b: 14, setup_effort: "2-5 days incl. SSO and backups (estimate)"}
+
+runtime:
+  ollama_parallel_max: 4          # Ollama-class runtimes: parallel slots planned at most
+
+# ---------------------------------------------------------------- sizing
+sizing:
+  headroom_fraction: 0.20         # total estimated use must be <= 80% of usable memory
+  cpu_only_os_reserve_gb: 4
+  # Search order when fitting the general model (first fit wins):
+  #   model (best quality first) -> context (full, halving down to min_context_tokens)
+  #   -> KV cache (f16, then q8_0)
+  #   -> weight quantization (higher precision first)
+  ollama_quant_preference: [Q8_0, Q5_K_M, Q4_K_M]
+  vllm_quant_preference:   [FP8, AWQ]
+  kv_cache_types: {f16: 1.0, q8_0: 0.5}   # bytes multiplier vs f16; q8_0 needs flash attention
+  min_context_tokens: 8192
+  multi_session_context_fill: 0.5         # with several sessions, not all hold a full context at once
+  tokens_per_sec:
+    efficiency: 0.55              # share of memory bandwidth reached in decode (estimate)
+    targets: {instant: 20, few_seconds: 8, batch_ok: 2}   # single-stream decode tok/s needed
+  prefill_efficiency: 0.8         # share of FP16 TFLOPS reached in prefill (estimate; llama.cpp-class engines)
+  ttft_targets_s: {instant: 2, few_seconds: 8, batch_ok: 60}   # time to first token, warning only
+  # Prefer MoE when responsiveness matters (total params set memory, active params set speed).
+  moe_rank_bonus: 10
+  moe_bonus_when: {latency: [instant], shape: [generation_heavy], agents_always_on: true}
+  stt_large_min_usable_gb: 12
+  index_overhead_factor: 1.5      # disk for parsed text + vectors relative to source data (estimate)
+  base_disk_gb: 15
+
+# ---------------------------------------------------------------- hardware choice by workload shape
+# Applied when choosing hardware to buy (procurement, upgrades, good/better/best).
+workload_shape:
+  prompt_heavy:     {prefer: compute,   penalty_unless_compute_class: high, penalty: 1.5}
+  generation_heavy: {prefer: bandwidth, penalty_below_bandwidth_gbps: 400, penalty: 1.5}
+  balanced:         {prefer: memory_per_dollar}
+  vllm_needs_nvidia_penalty: 2.0  # 8+ sessions on a non-NVIDIA box cannot use vLLM
+
+# ---------------------------------------------------------------- component policy
+components:
+  vector_store:
+    1: {default: "sqlite-vec + SQLite FTS5 (in-process, no extra service)", alternatives: ["LanceDB", "Chroma", "Qdrant"]}
+    2: {default: "Postgres + pgvector + tsvector", alternatives: ["Qdrant + Postgres", "Chroma"]}
+    3: {default: "Postgres + pgvector + tsvector (row-level security for ACLs)", alternatives: ["Qdrant (payload filters) + Postgres"]}
+  observability_tier3: "Prometheus + Grafana + Loki"
+  reverse_proxy: "Caddy (only container with a published port; local CA TLS)"
+  backups: "restic (encrypted) to local disk + optional offline drive"
+
+# ---------------------------------------------------------------- privacy defaults
+privacy:
+  retention_days_default: 365     # used when the profile does not set retention.conversations_days
