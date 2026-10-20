@@ -52,12 +52,12 @@ h1 { font: 700 clamp(28px, 4.2vw, 44px)/1.08 var(--f-display); letter-spacing: -
 .trust::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--good); box-shadow: 0 0 0 4px var(--good-soft); }
 
 /* ---------- layout */
-.grid { display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr); gap: 24px; align-items: start; }
+.grid { display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr); gap: 24px; align-items: stretch; }
 @media (max-width: 920px) { .grid { grid-template-columns: minmax(0, 1fr); } }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); min-width: 0; }
 
 /* ---------- form / stepper */
-.form { padding: 18px; display: grid; gap: 16px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); }
+.form { padding: 18px; display: grid; gap: 16px; align-self: start; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); }
 @media (max-width: 920px) { .form { position: static; } }
 .steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; padding: 4px; background: var(--sunk); border-radius: 10px; }
 .steps button { border: 0; background: transparent; border-radius: 7px; padding: 7px 4px; font-size: 13px; font-weight: 600; color: var(--muted); display: grid; justify-items: center; gap: 1px; line-height: 1.2; }
@@ -95,7 +95,8 @@ select { appearance: none; background-image: linear-gradient(45deg, transparent 
 .btn[disabled] { visibility: hidden; }
 
 /* ---------- results */
-.out { display: grid; gap: 18px; min-width: 0; }
+.out { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.out > .card:last-child { flex: 1 0 auto; }  /* the detail card reaches down to the form's bottom edge */
 .verdict { padding: 22px clamp(16px, 3vw, 28px); display: grid; gap: 16px; }
 .eyebrow { font: 500 11.5px var(--f-mono); text-transform: uppercase; letter-spacing: .09em; color: var(--accent); margin: 0; }
 .verdict h2 { font: 700 clamp(22px, 2.6vw, 30px)/1.2 var(--f-display); letter-spacing: -.015em; margin: 0; text-wrap: balance; }
@@ -147,6 +148,9 @@ ul.list li { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 0 8
 ul.list li::before { content: "✓"; color: var(--good); font-weight: 700; grid-row: span 2; }
 ul.list.out li::before { content: "–"; color: var(--muted); }
 ul.list small { color: var(--muted); font-size: 12.5px; grid-column: 2; }
+ul.list.split { display: block; columns: 2 280px; column-gap: 28px; }
+ul.list.split li { break-inside: avoid; margin-bottom: 12px; }
+h3 .count { font: 500 12px var(--f-mono); color: var(--muted); background: var(--sunk); border-radius: 999px; padding: 1px 8px; margin-left: 6px; vertical-align: 2px; }
 
 .tco { display: grid; gap: 12px; }
 .tco-row { display: grid; grid-template-columns: minmax(0, 190px) minmax(0, 1fr) 84px; gap: 12px; align-items: center; font-size: 13.5px; }
@@ -574,10 +578,8 @@ footer { margin-top: 30px; font-size: 13px; color: var(--muted); display: grid; 
       plan: `<div><h3>What runs where</h3>${memBar(p)}</div>
         <div><h3>Models</h3>${modelTable(p)}</div>
         ${rec.good_better_best.length ? `<div><h3>Spend more, get a stronger model</h3><div class="tbl"><table><thead><tr><th>Hardware</th><th>Price</th><th>Runs</th><th>Speed</th></tr></thead><tbody>${rec.good_better_best.map((o) => `<tr><td>${esc(o.name)}</td><td class="n">${usd(o.price_usd[0])}–${usd(o.price_usd[1])}</td><td>${esc(o.general_model)}</td><td class="n">${o.tokens_per_sec_est != null ? "~" + words(o.tokens_per_sec_est) + " words/s" : "–"}</td></tr>`).join("")}</tbody></table></div></div>` : ""}
-        <div class="cols">
-          <div><h3>Included</h3><ul class="list">${rec.components.included.map((c) => `<li>${esc(c.name)}<small>${esc(c.reason)}</small></li>`).join("")}</ul></div>
-          <div><h3>Left out, and why</h3><ul class="list out">${rec.components.excluded.concat(rec.excluded_models).map((c) => `<li>${esc(c.name)}<small>${esc(c.reason)}</small></li>`).join("")}</ul></div>
-        </div>`,
+        <div><h3>Included <span class="count">${rec.components.included.length}</span></h3><ul class="list split">${rec.components.included.map((c) => `<li>${esc(c.name)}<small>${esc(c.reason)}</small></li>`).join("")}</ul></div>
+        <div><h3>Left out, and why <span class="count">${rec.components.excluded.length + rec.excluded_models.length}</span></h3><ul class="list out split">${rec.components.excluded.concat(rec.excluded_models).map((c) => `<li>${esc(c.name)}<small>${esc(c.reason)}</small></li>`).join("")}</ul></div>`,
       hardware: `<div><h3>The same needs on other machines</h3><p class="hint" style="margin-bottom:10px">Each row runs your answers on a different machine. Select a row to switch to it.</p>
           <div class="tbl"><table><thead><tr><th>Machine</th><th>Main model</th><th>Speed</th><th>Fit</th></tr></thead><tbody>${altRows()}</tbody></table></div></div>
         <div><h3>If your machine has less memory than this plan needs</h3><ul class="list">
