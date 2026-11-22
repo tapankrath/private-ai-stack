@@ -203,8 +203,21 @@ api:
     usd_per_million: {input: 2.00, output: 10.00}
     router_fee_fraction: 0                              # billed directly by the provider
     data_goes_to: "the model provider"
-    last_verified: "2026-10-20"
-    sources: ["https://anotherwrapper.com/llm-pricing/claude-sonnet-5-5 (third-party price tracker)"]
+    last_verified: "2026-11-21"
+    sources: ["https://platform.claude.com/docs/en/about-claude/pricing", "https://apidog.com/blog/claude-sonnet-5-5-pricing/"]
+
+# Per-token list prices by model size, shared with Token Savings Coach (scripts/build-site.py writes
+# them to site/ai-prices.js, which the Coach copies). "mid" must equal api.frontier above: the build
+# stops if they differ, so the two apps always quote the same prices.
+api_tiers:
+  as_of: "2026-11-21"
+  top:   {input: 4.00, output: 20.00, label: "top-tier", examples: "Claude Opus 5.5, GPT-5.6 Sol"}
+  mid:   {input: 2.00, output: 10.00, label: "mid-tier", examples: "Claude Sonnet 5.5, GPT-6 Sol"}
+  small: {input: 0.10, output: 0.50,  label: "small",    examples: "Claude Haiku 5.5, GPT-6 Luna"}
+  sources:
+    - "https://platform.claude.com/docs/en/about-claude/pricing"
+    - "https://developers.openai.com/api/docs/pricing"
+    - "https://techenclave.com/news/items/claude-haiku-5-5-launches-with-0-10-input-pricing-for-shorter-prompts"
 
 subscription:
   label: "Flat-rate AI subscription (team plan, per user)"

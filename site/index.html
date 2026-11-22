@@ -171,6 +171,22 @@ h3 .count { font: 500 12px var(--f-mono); color: var(--muted); background: var(-
 @media (max-width: 560px) { .tco-row { grid-template-columns: minmax(0, 1fr) 120px; } .tco-row .track { grid-column: 1 / -1; grid-row: 2; } }
 .callout { border-radius: 10px; padding: 12px 14px; font-size: 14px; background: var(--sunk); }
 .callout.warn { background: var(--warn-soft); }
+/* hand-off from Token Savings Coach */
+.handoff { border: 1px dashed var(--accent-line); border-radius: 10px; padding: 10px 12px; background: var(--accent-soft); }
+.handoff summary { cursor: pointer; font-weight: 600; font-size: 14px; }
+.handoff summary small { font-weight: 400; color: var(--muted); }
+.handoff textarea { width: 100%; box-sizing: border-box; margin-top: 8px; font: 12.5px var(--f-mono); border: 1px solid var(--line); border-radius: 8px; padding: 8px; background: var(--surface); color: var(--ink); resize: vertical; }
+.handoff .nav { justify-content: flex-start; margin-top: 8px; gap: 10px; align-items: center; }
+.handoff .msg { font-size: 13px; color: var(--muted); } .handoff .msg.bad { color: var(--bad); }
+.fromcoach { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; justify-content: space-between; border: 1px solid var(--accent-line); background: var(--accent-soft); border-radius: 10px; padding: 10px 14px; font-size: 13.5px; }
+.fromcoach strong { font-weight: 600; }
+.fromcoach button { border: 0; background: none; color: var(--accent); font: 600 13px var(--f-body); padding: 2px 0; cursor: pointer; text-decoration: underline; }
+.facts.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 900px) { .facts.four { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .facts.four { grid-template-columns: minmax(0, 1fr); } }
+.fact dd.pay-good { color: var(--good); } .fact dd.pay-no { color: var(--warn); }
+.tco-row.now .fill, .tco-row.now .low { background: var(--warn); opacity: .8; }
+.tco-row.now span:first-child { font-weight: 600; }
 ul.notes { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 ul.notes li { background: var(--warn-soft); border-radius: 8px; padding: 8px 12px; font-size: 13.5px; }
 
@@ -229,6 +245,10 @@ footer { margin-top: 30px; font-size: 13px; color: var(--muted); display: grid; 
 
       <section class="step" data-panel="0">
         <h2>Who will use it?</h2>
+        <details class="handoff" id="hobox"><summary>Coming from Token Savings Coach? <small>Paste your code to fill this in</small></summary>
+          <textarea id="hotext" rows="3" placeholder="TSC1.…" aria-label="Token Savings Coach code" spellcheck="false" data-nosize></textarea>
+          <div class="nav"><button type="button" class="btn" id="hoapply">Use my details</button><span class="msg" id="homsg" role="status"></span></div>
+        </details>
         <div class="q"><span>Start from an example <small>(you can change everything)</small></span>
           <div class="examples" id="examples"></div></div>
         <div class="row">
@@ -318,6 +338,7 @@ footer { margin-top: 30px; font-size: 13px; color: var(--muted); display: grid; 
 
 <script src="advisor-data.js"></script>
 <script src="advisor-engine.js"></script>
+<script src="handoff.js"></script>
 <script>
 (function () {
   "use strict";
@@ -490,14 +511,20 @@ footer { margin-top: 30px; font-size: 13px; color: var(--muted); display: grid; 
     }).join("")}</tbody></table></div>`;
   }
   function tcoBlock(t) {
-    const opts = Object.entries(t.options), max = Math.max(...opts.map(([, o]) => o.total_usd), 1);
+    let opts = Object.entries(t.options);
+    if (handoff) {
+      const now = Math.round(handoff.monthly_usd * t.months), where = handoff.platforms && handoff.platforms.length ? handoff.platforms.slice(0, 3).join(", ") + (handoff.platforms.length > 3 ? " and others" : "") : "your AI providers";
+      opts = [["now", { label: `What you pay now (${usd(handoff.monthly_usd)} a month)`, total_usd: now, low_usd: now, data_goes_to: where }]].concat(opts);
+    }
+    const max = Math.max(...opts.map(([, o]) => o.total_usd), 1);
     const pq = t.token_volume.per_query;
-    return `<div class="tco">${opts.map(([k, o]) => `<div class="tco-row ${k === "local" ? "local" : ""}">
+    return `<div class="tco">${opts.map(([k, o]) => `<div class="tco-row ${k === "local" ? "local" : k === "now" ? "now" : ""}">
         <span class="lbl">${esc(o.label)}<small class="${o.data_goes_to ? "away" : "home"}">${o.data_goes_to ? "Your prompts are sent to " + esc(o.data_goes_to) : "Your prompts stay on your machine"}</small></span>
         <div class="track"><div class="low" style="width:${Math.max(1, 100 * o.low_usd / max)}%"></div><div class="fill" style="width:${Math.max(1, 100 * o.total_usd / max)}%"></div></div>
         <span class="amt">${usd(o.total_usd)}${o.low_usd !== o.total_usd ? `<small>from ${usd(o.low_usd)}</small>` : ""}${o.fee_usd ? `<small class="fee">incl. ${usd(o.fee_usd)} fee</small>` : ""}</span></div>`).join("")}</div>
       <p class="hint">Hosted APIs charge for everything sent with each question: about ${pq.typical.toLocaleString("en-US")} tokens here (${pq.base.toLocaleString("en-US")} for the question and instructions, ${pq.history.toLocaleString("en-US")} of chat history resent${pq.recall ? `, ${pq.recall.toLocaleString("en-US")} of document passages from Recall` : ""}). The “from” figure counts the question alone at the cheapest provider.${t.options.api_open.fee_note ? " The open-weight figure " + esc(t.options.api_open.fee_note) + ", charged when you buy credits by card." : ""}</p>
       <p class="hint">Local cost: ${esc(t.local.hardware_note)}; electricity ${usd(t.local.breakdown.power)}; ${t.admin_rate ? `upkeep time ${usd(t.local.breakdown.admin_time)} at $${t.admin_rate}/hour` : "your own upkeep time is not counted"}.${t.options.subscription.note ? " Subscription " + esc(t.options.subscription.note) + "." : ""}</p>
+      ${handoff ? (() => { const pb = payback(t); return `<div class="callout${pb.cls === "no" ? " warn" : ""}">Against your current bill from Token Savings Coach: ${pb.months === 0 ? "running locally starts saving right away" : pb.months && pb.months <= t.months ? `the local setup pays for itself in about ${pb.months} months` : "the local setup does not pay for itself within three years"}. ${esc(pb.sub)}. Your current bill may buy stronger models than ${lastRec && lastRec.plan.general ? esc(lastRec.plan.general.name) : "the local one"}, so try the local model on your real work before you cancel anything.</div>`; })() : ""}
       <div class="callout">${esc(t.verdict)}</div>`;
   }
 
@@ -594,6 +621,54 @@ footer { margin-top: 30px; font-size: 13px; color: var(--muted); display: grid; 
 
   // ---------- render
   let lastRaw = null, lastRec = null, tab = store.get("rsa-tab") || "plan";
+
+  // ---------- hand-off from Token Savings Coach
+  let handoff = null;
+  try { const h = store.get("rsa-handoff"); if (h) handoff = TSCHandoff.clean(JSON.parse(h)); } catch (e) { handoff = null; }
+  function presetFor(h) {
+    const n = h.users || 1, reg = (h.regulated || []).length, has = (id) => !!D.profiles[id] && id;
+    if (n >= 20) return has("smb-50-sales-ops");
+    if (n > 1 && (h.jobs || []).includes("coding")) return has("software-team-8");
+    if (n > 1 && (reg || h.org_type === "small_business")) return has("law-accounting-office-10");
+    if (n > 1) return has("household-photos-docs");
+    return has("solo-researcher-16gb");
+  }
+  function applyHandoff(h, quiet) {
+    handoff = h; store.set("rsa-handoff", JSON.stringify(h));
+    const id = presetFor(h) || order[0];
+    pick(id, true);
+    const users = h.users || 1;
+    if (h.org_type) $("org_type").value = h.org_type;
+    else $("org_type").value = users === 1 ? "individual" : users >= 20 ? "smb" : "small_business";
+    $("users").value = users; $("peak").value = Math.max(1, Math.ceil(users / 3));
+    if (h.jobs) setChecked("job", h.jobs);
+    setChecked("rg", h.regulated || []);
+    if ((h.regulated || []).length) $("sens").value = "regulated";
+    if (h.queries_per_user_per_day) $("qpd").value = h.queries_per_user_per_day;
+    if (h.agents != null) { $("agents").value = h.agents; $("always").checked = h.agents > 0; if (h.agents > 0 && !checked("job").includes("agent_tasks")) setChecked("job", checked("job").concat("agent_tasks")); }
+    if (h.agents > 0 || (h.jobs || []).includes("coding")) $("skill").value = "power_user";
+    $("airgap").checked = false; // a hand-off never implies an air gap; they use cloud AI today
+    $("commercial").checked = users > 1 && h.org_type !== "household";
+    ovToForm(null); // no hardware given: let the advisor pick what to buy
+    presetId = null; guideOs = null; guidePath = null;
+    document.querySelectorAll(".ex").forEach((b) => b.setAttribute("aria-pressed", "false"));
+    if (!quiet) { tab = "cost"; store.set("rsa-tab", tab); }
+    render();
+  }
+  function clearHandoff() { handoff = null; try { localStorage.removeItem("rsa-handoff"); } catch (e) {} render(); }
+
+  // Plain-language payback against what they pay now.
+  function payback(t) {
+    if (!handoff) return null;
+    const b = t.local.breakdown, upfront = b.hardware + b.networking, running = (b.power + b.admin_time) / t.months;
+    const save = handoff.monthly_usd - running;
+    if (save <= 0) return { cls: "no", head: "Not on cost alone", sub: `Running it costs about ${usd(running)} a month, more than the ${usd(handoff.monthly_usd)} you pay now`, months: null, save };
+    if (upfront <= 0) return { cls: "good", head: "Right away", sub: `You already have the machine; saves about ${usd(save)} a month`, months: 0, save };
+    const m = Math.ceil(upfront / save);
+    return m > t.months
+      ? { cls: "no", head: "Not within 3 years", sub: `Saves only about ${usd(save)} a month, so it takes about ${Math.round(m / 12)} years to pay back`, months: m, save }
+      : { cls: "good", head: `${m} month${m === 1 ? "" : "s"}`, sub: `Saves about ${usd(save)} a month after that`, months: m, save };
+  }
   const TABS = [["plan", "Plan"], ["hardware", "Other hardware"], ["cost", "Cost"], ["setup", "Set it up"], ["details", "Details"]];
   function render() {
     let raw, rec;
@@ -643,14 +718,18 @@ footer { margin-top: 30px; font-size: 13px; color: var(--muted); display: grid; 
           <div class="nav" style="justify-content:flex-start"><button type="button" class="btn" id="copy">Copy profile</button><button type="button" class="btn quiet" id="show">Show profile</button><span id="copied" class="hint" style="align-self:center"></span></div>
           <textarea id="yaml" readonly hidden aria-label="Profile"></textarea></div>`,
     };
+    const pb = payback(rec.tco);
+    const from = handoff ? `<div class="fromcoach"><span><strong>Using your details from Token Savings Coach.</strong> You pay about ${usd(handoff.monthly_usd)} a month for AI${handoff.items ? ": " + esc(handoff.items.slice(0, 4).map((i) => `${i.name} ${usd(i.usd)}`).join(", ")) + (handoff.items.length > 4 ? ", …" : "") : ""}.</span><button type="button" id="hoclear">Stop using them</button></div>` : "";
     $("out").innerHTML = `
       <div class="card verdict">
+        ${from}
         <p class="eyebrow">Your plan · ${esc(rec.tier_name)}</p>
         <h2>${headline}</h2>
-        <dl class="facts" style="margin:0">
+        <dl class="facts${pb ? " four" : ""}" style="margin:0">
           <div class="fact"><dt>Fit</dt><dd class="fit-${cls}">${fit}<small>${p.memory_use_pct != null ? `${Math.round(p.memory_use_pct)}% of memory used, ${Math.round(100 - p.memory_use_pct)}% to spare` : ""}</small></dd></div>
           <div class="fact"><dt>Speed</dt><dd>${esc(sp)}<small>${esc(spSub)}</small></dd></div>
           <div class="fact"><dt>Three-year cost</dt><dd>${usd(tcoLocal)}<small>${rec.procurement || rec.upgrades_required ? "including the hardware" : (raw.hardware.override || {}).purchase_price_usd ? "including buying this machine" : "on the machine you already have"}</small></dd></div>
+          ${pb ? `<div class="fact"><dt>Pays for itself</dt><dd class="pay-${pb.cls}">${esc(pb.head)}<small>${esc(pb.sub)}</small></dd></div>` : ""}
         </dl>
         ${buy}
       </div>
@@ -669,6 +748,7 @@ footer { margin-top: 30px; font-size: 13px; color: var(--muted); display: grid; 
     const cp = e.target.closest("[data-copy]");
     if (cp) { const txt = cp.previousElementSibling.textContent; copyText(txt, () => { cp.textContent = "Copied"; setTimeout(() => (cp.textContent = "Copy"), 1500); }, () => { const r = document.createRange(); r.selectNodeContents(cp.previousElementSibling); const s = getSelection(); s.removeAllRanges(); s.addRange(r); cp.textContent = "Selected"; }); return; }
     if (e.target.id === "copy") { const txt = JSON.stringify(lastRaw, null, 2); $("yaml").value = txt; copyText(txt, () => ($("copied").textContent = "Copied. Save it as profile.yaml."), () => { $("yaml").hidden = false; $("yaml").select(); $("copied").textContent = "Selected: press Ctrl+C or ⌘C."; }); }
+    if (e.target.id === "hoclear") { clearHandoff(); return; }
     if (e.target.id === "show") { $("yaml").value = JSON.stringify(lastRaw, null, 2); $("yaml").hidden = !$("yaml").hidden; }
   });
   $("out").addEventListener("keydown", (e) => { const alt = e.target.closest("[data-alt]"); if (alt && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); applyAlt(+alt.dataset.alt); } });
@@ -695,13 +775,25 @@ footer { margin-top: 30px; font-size: 13px; color: var(--muted); display: grid; 
   // examples
   const order = Object.keys(EXAMPLES).filter((k) => D.profiles[k]).concat(Object.keys(D.profiles).filter((k) => !EXAMPLES[k]));
   $("examples").innerHTML = order.map((k) => { const [t, s] = EXAMPLES[k] || [k, ""]; return `<button type="button" class="ex" data-id="${k}" aria-pressed="false"><strong>${esc(t)}</strong><span>${esc(s)}</span></button>`; }).join("");
-  function pick(id) {
+  function pick(id, keepHandoff) {
+    if (!keepHandoff && handoff) { handoff = null; try { localStorage.removeItem("rsa-handoff"); } catch (e) {} }
     presetId = id; guideOs = null; guidePath = null; toForm(D.profiles[id]);
     document.querySelectorAll(".ex").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.id === id)));
-    store.set("rsa-preset", id); render();
+    if (!keepHandoff) { store.set("rsa-preset", id); render(); }
   }
   $("examples").addEventListener("click", (e) => { const b = e.target.closest(".ex"); if (b) pick(b.dataset.id); });
   $("f").addEventListener("submit", (e) => e.preventDefault());
+  function tryPaste() {
+    const msg = $("homsg");
+    try {
+      const h = TSCHandoff.decode($("hotext").value);
+      applyHandoff(h);
+      msg.className = "msg"; msg.textContent = `Filled in from your ${usd(h.monthly_usd)}-a-month AI bill. Check the steps, then see your plan below.`;
+      $("hotext").value = "";
+    } catch (err) { msg.className = "msg bad"; msg.textContent = "That didn't work: " + err.message + ". Copy the code again from Token Savings Coach."; }
+  }
+  $("hoapply").addEventListener("click", tryPaste);
+  $("hotext").addEventListener("paste", () => setTimeout(() => { if (/TSC1\./.test($("hotext").value)) tryPaste(); }, 0));
   function onHwChange(e) {
     const id = e.target.id;
     if (id === "platform") { syncHw(); guideOs = null; }
@@ -712,12 +804,23 @@ footer { margin-top: 30px; font-size: 13px; color: var(--muted); display: grid; 
     }
     if (["chip", "ram", "vram", "gpus"].includes(id)) syncPrice();
   }
-  $("f").addEventListener("input", (e) => { onHwChange(e); render(); });
+  $("f").addEventListener("input", (e) => { if (e.target.hasAttribute("data-nosize")) return; onHwChange(e); render(); });
   $("f").addEventListener("change", (e) => { if (["platform", "owned", "chip"].includes(e.target.id)) { onHwChange(e); render(); } });
 
-  globalThis.AdvisorPage = { profile: () => fromForm(), recommendation: () => lastRec, pick, applyAlt };
+  globalThis.AdvisorPage = { profile: () => fromForm(), recommendation: () => lastRec, pick, applyAlt, applyHandoff, handoff: () => handoff, payback: () => lastRec && payback(lastRec.tco) };
   const saved = store.get("rsa-preset");
-  pick(saved && D.profiles[saved] ? saved : order[0]);
+  // One-tap hand-off: the Coach links here with #tsc=TSC1.… (the part after # never reaches a server).
+  // Read it once, then take it out of the address bar and history.
+  try {
+    const m = String(location.hash || "").match(/TSC1\.[A-Za-z0-9_-]+/);
+    if (m) {
+      handoff = TSCHandoff.decode(m[0]); store.set("rsa-handoff", JSON.stringify(handoff));
+      try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
+      store.set("rsa-tab", "cost"); tab = "cost";
+    }
+  } catch (e) { /* a broken link just opens the Advisor normally */ }
+  if (handoff) applyHandoff(handoff, true);
+  else pick(saved && D.profiles[saved] ? saved : order[0]);
   showStep(cur);
 })();
 </script>

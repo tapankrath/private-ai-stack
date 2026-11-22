@@ -120,6 +120,25 @@ sends nothing anywhere. `tests/test_site_parity.py` checks that it gives the sam
 Python engine. The included GitHub Actions workflow publishes `site/` to GitHub Pages: in the
 repo settings, set Pages to deploy from GitHub Actions.
 
+### Working with Token Savings Coach
+
+[Token Savings Coach](https://tapankrath.github.io/TokenSavings/) finds savings on cloud AI bills.
+When a report suggests running locally (private data, always-on agents, or about $100 a month or
+more), its "Open Right-Size Advisor" button opens this page with the person's details filled in:
+monthly AI cost, team size, type of work and private-data kinds, never what they typed. The details
+travel after the `#` in the link, so they never reach a server, and the page removes them from the
+address bar once read. They can also paste a `TSC1.` code into the "Coming from Token Savings
+Coach?" box. The Cost tab then adds "What you pay now" and a "Pays for itself" estimate.
+
+The two apps share two files:
+
+- `site/handoff.js`: the hand-off code format. Keep the copy in the Coach identical.
+- `site/ai-prices.js`: per-token prices by model size, written by `scripts/build-site.py` from
+  `api_tiers` in `config/pricing.yaml` (`mid` must equal `api.frontier`, or the build stops). After
+  changing prices, rebuild and copy the file into the Coach.
+
+`tests/test_handoff_and_prices.py` checks both.
+
 ## Layout
 
 ```
